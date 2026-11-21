@@ -44,8 +44,10 @@ Para mudar a versão base (ex.: `1.1`), edite `ios/VERSION`.
 ```
 ios/
   project.yml            # projeto Xcode (XcodeGen)
-  PsicoFun/              # app nativo em Swift (UIKit + WKWebView)
-  Web/index.html         # motor de questões e interface, empacotados no app (funciona offline)
+  PsicoFun/              # app nativo em Swift
+    Psicotecnico/        # telas do Psicotécnico em SwiftUI (figuras desenhadas em Canvas)
+    Palografico/         # modo Palográfico em SwiftUI
+  Engine/engine.js       # gerador + solucionador de questões (lógica pura, roda no JavaScriptCore; funciona offline)
 altstore/
   apps.json              # fonte para AltStore/SideStore/FlareStore (atualizada pelo workflow)
   icon.png
@@ -53,7 +55,7 @@ scripts/update_source.py # atualiza a fonte a cada release
 .github/workflows/ios.yml
 ```
 
-O app nativo cuida de: dados salvos no aparelho (arquivo próprio, além do armazenamento do WebView), vibração ao escolher e confirmar, exportação de backup pela folha de compartilhar do iOS, áreas seguras (notch e barra inferior) e links externos no Safari.
+Toda a interface é SwiftUI nativo (abas, folhas, alertas, listas sob demanda e animações do sistema); não há WebView. O gerador de questões é o mesmo do app original, então cada semente gera exatamente a mesma questão e a revisão de sessões antigas continua idêntica. Os dados ficam no aparelho (`psicofun-state.json`, mesmo formato de antes), com vibração ao escolher e confirmar e backup pela folha de compartilhar do iOS.
 
 ## Compilar localmente (opcional, precisa de um Mac)
 

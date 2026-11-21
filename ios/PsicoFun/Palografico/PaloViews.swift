@@ -38,6 +38,8 @@ struct PaloPrepView: View {
     @AppStorage(PaloKeys.vibration) private var vibration = true
     @AppStorage(PaloKeys.notificationFallback) private var notificationFallback = false
     @State private var notificationDenied = false
+    @AppStorage(PaloKeys.heartRate) private var heartRateOn = false
+    @ObservedObject private var heartRate = PaloHeartRateMonitor.shared
 
     private var mode: PaloMode { PaloMode(rawValue: modeRaw) ?? .treino }
 
@@ -73,6 +75,23 @@ struct PaloPrepView: View {
             }
 
             Section {
+                Toggle(isOn: $heartRateOn) { Label("Frequência cardíaca", systemImage: "heart") }
+                    .onChange(of: heartRateOn) { on in
+                        if on { heartRate.activate() } else { heartRate.deactivate() }
+                    }
+                if heartRateOn {
+                    PaloHRStatusRow(monitor: heartRate)
+                    if let name = heartRate.rememberedName {
+                        Button("Esquecer \(name)") { heartRate.forgetDevice() }
+                    }
+                }
+            } header: {
+                Text("Relógio (opcional)")
+            } footer: {
+                Text("Ligue a transmissão de FC no relógio (\"broadcast\"). A FC não aparece durante a sessão, só no resultado. Se o relógio não estiver conectado, a sessão segue normal e fica sem dados de FC.")
+            }
+
+            Section {
                 Toggle(isOn: $notificationFallback) { Label("Notificação de reserva", systemImage: "bell") }
                     .onChange(of: notificationFallback) { on in
                         guard on else { return }
@@ -95,7 +114,8 @@ struct PaloPrepView: View {
                 Button {
                     engine.start(mode: mode, config: .init(sound: sound,
                                                            vibration: vibration,
-                                                           notificationFallback: notificationFallback))
+                                                           notificationFallback: notificationFallback,
+                                                           heartRate: heartRateOn))
                 } label: {
                     Text("Começar \(mode.title.lowercased())")
                         .font(.headline)
@@ -121,6 +141,68 @@ struct PaloPrepView: View {
             }
         }
         .navigationTitle("Palográfico")
+        .onAppear { if heartRateOn { heartRate.activate() } }
+    }
+}
+
+/// Status do relógio na preparação. Só informa: nunca impede de começar.
+struct PaloHRStatusRow: View {
+    @ObservedObject var monitor: PaloHeartRateMonitor
+
+    var body: some View {
+        HStack {
+            Image(systemName: icon).foregroundColor(color)
+            Text(text)
+            Spacer()
+            if isConnected {
+                Text(monitor.latestBPM.map { "\($0) bpm" } ?? "aguardando leitura")
+                    .foregroundColor(.secondary)
+                    .monospacedDigit()
+            } else if isWaiting {
+                ProgressView()
+            }
+        }
+        .font(.callout)
+    }
+
+    private var isConnected: Bool {
+        if case .connected = monitor.status { return true }
+        return false
+    }
+
+    private var isWaiting: Bool {
+        switch monitor.status {
+        case .searching, .connecting: return true
+        default: return false
+        }
+    }
+
+    private var text: String {
+        switch monitor.status {
+        case .off: return "Desligado"
+        case .unauthorized: return "Bluetooth bloqueado nos Ajustes do iPhone"
+        case .bluetoothOff: return "Bluetooth desligado"
+        case .unsupported: return "Bluetooth indisponível neste aparelho"
+        case .searching: return "Procurando relógio…"
+        case .connecting(let name): return "Conectando a \(name)…"
+        case .connected(let name): return name
+        }
+    }
+
+    private var icon: String {
+        switch monitor.status {
+        case .connected: return "heart.fill"
+        case .unauthorized, .bluetoothOff, .unsupported: return "exclamationmark.triangle"
+        default: return "heart"
+        }
+    }
+
+    private var color: Color {
+        switch monitor.status {
+        case .connected: return .red
+        case .unauthorized, .bluetoothOff, .unsupported: return .orange
+        default: return .secondary
+        }
     }
 }
 
@@ -400,6 +482,10 @@ struct PaloResultView: View {
                 Text("Rendimento por ciclo")
             }
 
+            if let hr = record.heartRate {
+                PaloHRSection(heartRate: hr, previous: previous)
+            }
+
             if record.mode == .teste {
                 Section {
                     let band = bands.classify(total: metrics.total)
@@ -514,6 +600,10 @@ struct PaloCycleChart: View {
 }
 
 enum PaloFormat {
+    static func bpm(_ value: Double) -> String {
+        "\(Int(value.rounded())) bpm"
+    }
+
     static func decimal(_ value: Double) -> String {
         value.formatted(.number.precision(.fractionLength(1)))
     }
@@ -582,6 +672,15 @@ struct PaloHistoryView: View {
         }
         HStack { Text("Média por ciclo"); Spacer(); Text(PaloFormat.decimal(avgMean)).foregroundColor(.secondary) }
         HStack { Text("Oscilação média"); Spacer(); Text(PaloFormat.decimal(avgOsc)).foregroundColor(.secondary) }
+        let hrMeans = items.compactMap { $0.heartRate?.mean }
+        if !hrMeans.isEmpty {
+            HStack {
+                Text("FC média")
+                Spacer()
+                Text("\(PaloFormat.bpm(hrMeans.reduce(0, +) / Double(hrMeans.count))) · \(hrMeans.count) de \(items.count) sessões")
+                    .foregroundColor(.secondary)
+            }
+        }
         if mode == .teste, items.count >= 2 {
             let ordered = items.reversed().enumerated().map {
                 PaloSessionPoint(index: $0.offset + 1, total: $0.element.metrics.total)
@@ -620,6 +719,11 @@ struct PaloHistoryRow: View {
             Text(record.counts.map(String.init).joined(separator: " · "))
                 .font(.caption.monospacedDigit())
                 .foregroundColor(.secondary)
+            if let hr = record.heartRate {
+                Label(hr.mean.map { "FC média \(PaloFormat.bpm($0))" } ?? "FC sem dados", systemImage: "heart")
+                    .font(.caption)
+                    .foregroundColor(.secondary)
+            }
             if !record.note.isEmpty {
                 Text(record.note).font(.caption).lineLimit(2)
             }
@@ -680,5 +784,132 @@ struct PaloBandsView: View {
                 .multilineTextAlignment(.trailing)
                 .frame(maxWidth: 90)
         }
+    }
+}
+
+// MARK: - Frequência cardíaca (resultado)
+
+/// FC da sessão. Só registro: sem classificação e sem "alto/baixo é melhor".
+struct PaloHRSection: View {
+    let heartRate: PaloHeartRate
+    /// Sessões anteriores do mesmo modo (a comparação usa só as que têm FC).
+    let previous: [PaloRecord]
+
+    var body: some View {
+        Section {
+            if heartRate.hasData {
+                HStack {
+                    metric("Média", heartRate.mean.map { "\(Int($0.rounded()))" } ?? "—")
+                    Divider()
+                    metric("Mínima", heartRate.min.map(String.init) ?? "—")
+                    Divider()
+                    metric("Máxima", heartRate.max.map(String.init) ?? "—")
+                }
+                .padding(.vertical, 4)
+
+                PaloHRChart(cycles: heartRate.cycles)
+                    .frame(height: 150)
+                    .padding(.vertical, 6)
+
+                ForEach(heartRate.cycles.indices, id: \.self) { i in
+                    let c = heartRate.cycles[i]
+                    HStack {
+                        Text("Ciclo \(i + 1)")
+                        if c.isPartial {
+                            Text("parcial")
+                                .font(.caption2)
+                                .padding(.horizontal, 6)
+                                .padding(.vertical, 2)
+                                .background(Capsule().fill(Color.orange.opacity(0.2)))
+                        }
+                        Spacer()
+                        Text(cycleText(c)).foregroundColor(.secondary).monospacedDigit()
+                    }
+                }
+
+                let prevMeans = previous.compactMap { $0.heartRate?.mean }
+                if !prevMeans.isEmpty {
+                    HStack {
+                        Text("Média das anteriores (\(prevMeans.count))")
+                        Spacer()
+                        Text(PaloFormat.bpm(prevMeans.reduce(0, +) / Double(prevMeans.count)))
+                            .foregroundColor(.secondary)
+                    }
+                }
+            } else {
+                Label("Sem leituras do relógio nesta sessão.", systemImage: "heart.slash")
+                    .foregroundColor(.secondary)
+            }
+        } header: {
+            Text("Frequência cardíaca")
+        } footer: {
+            Text(footer)
+        }
+    }
+
+    private var footer: String {
+        var parts: [String] = []
+        if let name = heartRate.deviceName, heartRate.hasData { parts.append("Fonte: \(name).") }
+        if heartRate.isPartial {
+            parts.append("Ciclos parciais tiveram leitura em menos de \(Int(PaloHRCycle.partialThreshold * 100))% do tempo.")
+        }
+        parts.append("Só registro, sem classificação. A FC muda com café, sono, postura e outros fatores, e não indica desempenho.")
+        return parts.joined(separator: " ")
+    }
+
+    private func cycleText(_ c: PaloHRCycle) -> String {
+        guard let mean = c.mean else { return "sem dados" }
+        if let lo = c.min, let hi = c.max, lo != hi {
+            return "\(PaloFormat.bpm(mean)) (\(lo)–\(hi))"
+        }
+        return PaloFormat.bpm(mean)
+    }
+
+    private func metric(_ title: String, _ value: String) -> some View {
+        VStack(spacing: 4) {
+            Text(value).font(.title3.weight(.semibold).monospacedDigit())
+            Text(title).font(.caption).foregroundColor(.secondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+}
+
+/// Média por ciclo (ponto) com a faixa mínima–máxima (barra). Ciclos sem leitura ficam de fora.
+struct PaloHRChart: View {
+    let cycles: [PaloHRCycle]
+
+    private struct Point: Identifiable {
+        let cycle: Int
+        let mean: Double
+        let low: Int
+        let high: Int
+        var id: Int { cycle }
+    }
+
+    var body: some View {
+        let points: [Point] = cycles.indices.compactMap { i in
+            let c = cycles[i]
+            guard let mean = c.mean, let lo = c.min, let hi = c.max else { return nil }
+            return Point(cycle: i + 1, mean: mean, low: lo, high: hi)
+        }
+        let low = (points.map { $0.low }.min() ?? 60) - 5
+        let high = (points.map { $0.high }.max() ?? 100) + 5
+        Chart(points) { p in
+            RuleMark(x: .value("Ciclo", p.cycle),
+                     yStart: .value("Mín", p.low),
+                     yEnd: .value("Máx", p.high))
+                .lineStyle(StrokeStyle(lineWidth: 6, lineCap: .round))
+                .foregroundStyle(Color.red.opacity(0.25))
+            PointMark(x: .value("Ciclo", p.cycle), y: .value("bpm", p.mean))
+                .foregroundStyle(Color.red)
+        }
+        .chartXAxis {
+            AxisMarks(values: Array(1...max(1, cycles.count))) { _ in
+                AxisGridLine()
+                AxisValueLabel()
+            }
+        }
+        .chartXScale(domain: 0...(max(1, cycles.count) + 1))
+        .chartYScale(domain: low...high)
     }
 }
