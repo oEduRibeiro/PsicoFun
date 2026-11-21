@@ -82,6 +82,14 @@ jobs:
           shot bands light 4
           shot settings light 4
           shot stats light 4
+          shot live light 5
+          shot psico-home light 9
+          shot psico-setup light 6
+          shot psico-quiz light 8
+          shot psico-quiz dark 8
+          shot psico-explanation light 7
+          shot psico-result light 7
+          shot psico-stats light 7
           ls -lh "$OUT"
 
       - uses: actions/upload-artifact@v4

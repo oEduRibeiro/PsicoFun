@@ -101,9 +101,10 @@ final class RootContainerViewController: UIViewController {
         PsicoMigration.runIfNeeded(store: psicoStore)
 
         #if targetEnvironment(simulator)
-        PFDemo.run(on: self, engine: engine, store: store, psicoStore: psicoStore) { [weak self] in
-            self?.switcherModel.mode = Mode.palografico.rawValue
-            self?.modeSelected(Mode.palografico.rawValue)
+        PFDemo.run(on: self, engine: engine, store: store, psicoStore: psicoStore) { [weak self] raw in
+            self?.switcherModel.mode = raw
+            self?.mode = Mode(rawValue: raw) ?? .psicotecnico
+            self?.showMode(Mode(rawValue: raw) ?? .psicotecnico)
         }
         #endif
 
