@@ -112,7 +112,7 @@ struct PsicoResultView: View {
             }
             .padding(.horizontal, 16)
             .padding(.vertical, 12)
-            .frame(maxWidth: 760)
+            .frame(maxWidth: PF.Space.maxWidth)
             .frame(maxWidth: .infinity)
         }
     }
@@ -138,12 +138,12 @@ struct PsicoResultView: View {
             } label: {
                 HStack(spacing: 10) {
                     Text("\(i + 1). \(PsicoText.fams[sp.fam] ?? sp.fam) · nível \(sp.lvl)")
-                        .font(.system(size: 16, weight: .semibold))
+                        .pfText(.headline)
                         .foregroundColor(PF.ink)
                         .frame(maxWidth: .infinity, alignment: .leading)
                     if isOpen {
                         Text(a.ok ? "Acertou" : "Errou")
-                            .font(.system(size: 13, weight: .bold))
+                            .pfText(.caption, weight: .bold)
                             .foregroundColor(a.ok ? PF.ok : PF.bad)
                             .padding(.horizontal, 9).padding(.vertical, 2)
                             .background(a.ok ? PF.okBg : PF.badBg, in: Capsule())
@@ -158,7 +158,7 @@ struct PsicoResultView: View {
 
             if isOpen, let it = PsicoEngine.shared.item(sp) {
                 VStack(alignment: .leading, spacing: 12) {
-                    Text(it.prompt).font(.system(size: 17, weight: .heavy)).fixedSize(horizontal: false, vertical: true)
+                    Text(it.prompt).pfText(.headline, weight: .heavy).fixedSize(horizontal: false, vertical: true)
                     PsicoStimView(item: it, width: 280, height: 700).frame(maxWidth: .infinity)
                     PsicoOptionsGrid(item: it, selected: a.c, showColors: true, locked: true, width: 280, height: 700) { _ in }
                         .frame(maxWidth: .infinity)
@@ -200,7 +200,7 @@ struct PsicoStatsView: View {
             .padding(.horizontal, 16)
             .padding(.top, 4)
             .padding(.bottom, 28)
-            .frame(maxWidth: 760)
+            .frame(maxWidth: PF.Space.maxWidth)
             .frame(maxWidth: .infinity)
         }
         .background(PF.bg.ignoresSafeArea())

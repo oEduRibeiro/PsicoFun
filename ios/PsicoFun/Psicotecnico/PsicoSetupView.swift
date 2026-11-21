@@ -82,7 +82,7 @@ struct PsicoSetupView: View {
                             PFEye(open: store.fbOf(mode) == "eye")
                             Text(store.fbText(mode) + (m.fbEnd ? "." : " — muda em Ajustes."))
                         }
-                        .font(.system(size: 14))
+                        .pfText(.footnote)
                         .foregroundColor(PF.muted)
 
                         Button("Começar") { start() }
@@ -93,7 +93,7 @@ struct PsicoSetupView: View {
             .padding(.horizontal, 16)
             .padding(.top, 4)
             .padding(.bottom, 28)
-            .frame(maxWidth: 760)
+            .frame(maxWidth: PF.Space.maxWidth)
             .frame(maxWidth: .infinity)
         }
         .scrollDismissesKeyboard(.interactively)
@@ -117,7 +117,7 @@ struct PsicoSetupView: View {
 
     private func field<C: View>(_ title: String, @ViewBuilder _ content: () -> C) -> some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text(title).font(.system(size: 16, weight: .semibold))
+            Text(title).pfText(.headline)
             content()
         }
     }
@@ -125,8 +125,8 @@ struct PsicoSetupView: View {
     private func levelSlider(_ title: String, _ value: Binding<Int>) -> some View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(spacing: 6) {
-                Text(title).font(.system(size: 16, weight: .semibold))
-                Text("\(value.wrappedValue)").font(.system(size: 18, weight: .bold)).foregroundColor(PF.acc)
+                Text(title).pfText(.headline)
+                Text("\(value.wrappedValue)").pfText(.headline, weight: .bold).foregroundColor(PF.acc)
                     .monospacedDigit()
             }
             Slider(value: Binding(get: { Double(value.wrappedValue) },
@@ -165,12 +165,12 @@ struct PsicoSetupView: View {
                               format: .number)
                         .keyboardType(.numberPad)
                         .focused($focused)
-                        .font(.system(size: 16, weight: .bold))
+                        .pfText(.headline, weight: .bold)
                         .padding(.horizontal, 10)
                         .frame(width: 96, height: 42)
                         .background(PF.paper, in: RoundedRectangle(cornerRadius: 10))
                         .overlay(RoundedRectangle(cornerRadius: 10).stroke(PF.ink, lineWidth: 1.5))
-                    Text(unit).font(.system(size: 14)).foregroundColor(PF.muted)
+                    Text(unit).pfText(.footnote).foregroundColor(PF.muted)
                 }
             }
         }
