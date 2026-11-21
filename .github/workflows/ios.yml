@@ -65,7 +65,7 @@ jobs:
             CURRENT_PROJECT_VERSION=${{ steps.v.outputs.build }} \
             CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
             build | tee build.log | grep -E '^(\*\*|error|warning: .*Swift)' || true
-          test -d build/Release-iphoneos/PsicoFun.app || { tail -80 build.log; exit 1; }
+          test -d build/Release-iphoneos/PsicoFun.app || { grep -E ': (error|fatal error):' build.log | sort -u | head -60; tail -40 build.log; exit 1; }
 
       - name: Empacotar .ipa
         run: |
