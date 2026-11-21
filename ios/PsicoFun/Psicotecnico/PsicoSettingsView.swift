@@ -4,6 +4,7 @@ import UniformTypeIdentifiers
 
 struct PsicoSettingsView: View {
     @ObservedObject var store: PsicoStore
+    @ObservedObject var paloStore: PaloStore
 
     @State private var importChoice = false
     @State private var fileImporter = false
@@ -80,7 +81,7 @@ struct PsicoSettingsView: View {
             } header: {
                 Text("Seus dados")
             } footer: {
-                Text("Salvo neste aparelho · \(store.db.sessions.count) sessões guardadas. Para levar o histórico para outro aparelho, exporte o backup e restaure lá.")
+                Text("Salvo neste aparelho · \(store.db.sessions.count) sessões guardadas. O backup leva os dois modos: histórico e ajustes do Psicotécnico e do Palográfico. Para levar tudo para outro aparelho, exporte aqui e restaure lá.")
             }
 
             Section {
@@ -114,13 +115,16 @@ struct PsicoSettingsView: View {
         .alert("Restaurar backup?", isPresented: Binding(get: { pendingBackup != nil }, set: { if !$0 { pendingBackup = nil } })) {
             Button("Cancelar", role: .cancel) { pendingBackup = nil }
             Button("Restaurar") {
-                if let b = pendingBackup { store.restore(b) }
+                if let b = pendingBackup {
+                    store.restore(b)
+                    b.palografico?.apply(to: paloStore)
+                }
                 pendingBackup = nil
                 Haptics.play("success")
                 store.showToast("Backup restaurado")
             }
         } message: {
-            Text("O histórico atual (\(store.db.sessions.count) sessões) será substituído por \(pendingBackup?.sessions.count ?? 0) sessões do backup.")
+            Text(restoreMessage)
         }
         .alert("Apagar todo o histórico?", isPresented: $confirmClear) {
             Button("Cancelar", role: .cancel) {}
@@ -132,6 +136,17 @@ struct PsicoSettingsView: View {
         } message: {
             Text("Sessões, estatísticas e nível estimado serão apagados deste aparelho. Os ajustes continuam.")
         }
+    }
+
+    private var restoreMessage: String {
+        guard let b = pendingBackup else { return "" }
+        var t = "Psicotécnico: o histórico atual (\(store.db.sessions.count) sessões) será substituído por \(b.sessions.count) sessões do backup."
+        if let p = b.palografico {
+            t += " Palográfico: o histórico atual (\(paloStore.records.count) sessões) será substituído por \(p.records.count) sessões do backup."
+        } else {
+            t += " Este backup não tem dados do Palográfico; o histórico do Palográfico fica como está."
+        }
+        return t
     }
 
     private func binding(_ key: WritableKeyPath<PsicoSettings, Bool>) -> Binding<Bool> {
@@ -159,7 +174,7 @@ struct PsicoSettingsView: View {
     }
 
     private func exportBackup() {
-        guard let data = store.backupData() else { return }
+        guard let data = store.backupData(palo: paloStore) else { return }
         let fmt = DateFormatter()
         fmt.dateFormat = "yyyy-MM-dd"
         let url = FileManager.default.temporaryDirectory

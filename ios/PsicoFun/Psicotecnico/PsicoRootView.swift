@@ -45,6 +45,7 @@ final class PsicoNav: ObservableObject {
 /// Raiz do Psicotécnico: abas nativas (Treinar, Desempenho, Ajustes) e a tela da questão por cima.
 struct PsicoRootView: View {
     @ObservedObject var store: PsicoStore
+    let paloStore: PaloStore
     @StateObject private var nav = PsicoNav()
 
     var body: some View {
@@ -65,7 +66,7 @@ struct PsicoRootView: View {
                 .tag(PsicoTab.stats)
 
                 NavigationStack {
-                    PsicoSettingsView(store: store)
+                    PsicoSettingsView(store: store, paloStore: paloStore)
                 }
                 .tabItem { Label("Ajustes", systemImage: "gearshape") }
                 .tag(PsicoTab.settings)

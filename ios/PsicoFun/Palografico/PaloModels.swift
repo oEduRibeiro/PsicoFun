@@ -184,6 +184,12 @@ final class PaloStore: ObservableObject {
         persist()
     }
 
+    /// Substitui todo o histórico (restauração de backup).
+    func replaceAll(_ new: [PaloRecord]) {
+        records = new
+        persist()
+    }
+
     func delete(_ id: UUID) {
         records.removeAll { $0.id == id }
         persist()

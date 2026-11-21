@@ -311,15 +311,20 @@ final class PsicoStore: ObservableObject {
 
     // MARK: Backup
 
-    func backupData() -> Data? {
-        let b = PsicoBackup(settings: db.settings, sessions: db.sessions, est: db.est)
-        return try? JSONEncoder().encode(b)
+    /// Backup com os dois modos: Psicotécnico (formato de sempre) e Palográfico.
+    func backupData(palo: PaloStore) -> Data? {
+        let b = PsicoBackup(settings: db.settings, sessions: db.sessions, est: db.est, palografico: .current(palo))
+        let enc = JSONEncoder()
+        enc.dateEncodingStrategy = .iso8601
+        return try? enc.encode(b)
     }
 
     func parseBackup(_ data: Data) -> PsicoBackup? {
         guard let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               obj["sessions"] is [Any] else { return nil }
-        return try? JSONDecoder().decode(PsicoBackup.self, from: data)
+        let dec = JSONDecoder()
+        dec.dateDecodingStrategy = .iso8601
+        return try? dec.decode(PsicoBackup.self, from: data)
     }
 
     func restore(_ b: PsicoBackup) {

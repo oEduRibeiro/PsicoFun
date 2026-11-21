@@ -137,12 +137,54 @@ struct PsicoDB: Codable, Equatable {
     }
 }
 
-/// Formato do arquivo de backup (igual ao do app web).
+/// Formato do arquivo de backup. Os campos v/settings/sessions/est são os mesmos do
+/// app web (backups antigos continuam restaurando). "palografico" é opcional: quando
+/// existe, traz o histórico e os ajustes do Palográfico.
 struct PsicoBackup: Codable {
     var v: Int = 1
     var settings: PsicoSettings?
     var sessions: [PsicoSession]
     var est: PsicoEst?
+    var palografico: PaloBackup?
+}
+
+/// Parte do backup com os dados do Palográfico.
+struct PaloBackup: Codable {
+    var records: [PaloRecord]
+    var sound: Bool?
+    var vibration: Bool?
+    var notificationFallback: Bool?
+    var mode: String?
+    var bandMedia: Int?
+    var bandAlta: Int?
+    var bandSuperior: Int?
+
+    static func current(_ store: PaloStore) -> PaloBackup {
+        let d = UserDefaults.standard
+        return PaloBackup(records: store.records,
+                          sound: d.bool(forKey: PaloKeys.sound),
+                          vibration: d.bool(forKey: PaloKeys.vibration),
+                          notificationFallback: d.bool(forKey: PaloKeys.notificationFallback),
+                          mode: d.string(forKey: PaloKeys.mode),
+                          bandMedia: d.integer(forKey: PaloKeys.bandMedia),
+                          bandAlta: d.integer(forKey: PaloKeys.bandAlta),
+                          bandSuperior: d.integer(forKey: PaloKeys.bandSuperior))
+    }
+
+    func apply(to store: PaloStore) {
+        store.replaceAll(records)
+        let d = UserDefaults.standard
+        if let v = sound { d.set(v, forKey: PaloKeys.sound) }
+        if let v = vibration { d.set(v, forKey: PaloKeys.vibration) }
+        if let v = notificationFallback { d.set(v, forKey: PaloKeys.notificationFallback) }
+        if let v = mode, PaloMode(rawValue: v) != nil { d.set(v, forKey: PaloKeys.mode) }
+        if let m = bandMedia, let a = bandAlta, let s = bandSuperior,
+           PaloBands(mediaMin: m, altaMin: a, superiorMin: s).isValid {
+            d.set(m, forKey: PaloKeys.bandMedia)
+            d.set(a, forKey: PaloKeys.bandAlta)
+            d.set(s, forKey: PaloKeys.bandSuperior)
+        }
+    }
 }
 
 // MARK: - Questão gerada pelo motor

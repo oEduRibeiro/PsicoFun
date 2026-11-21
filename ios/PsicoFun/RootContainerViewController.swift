@@ -19,7 +19,7 @@ final class RootContainerViewController: UIViewController {
     private let store = PaloStore()
     private let psicoStore = PsicoStore()
     private lazy var psicoController: UIHostingController<PsicoRootView> = {
-        let vc = UIHostingController(rootView: PsicoRootView(store: psicoStore))
+        let vc = UIHostingController(rootView: PsicoRootView(store: psicoStore, paloStore: store))
         vc.view.backgroundColor = Theme.background
         return vc
     }()
