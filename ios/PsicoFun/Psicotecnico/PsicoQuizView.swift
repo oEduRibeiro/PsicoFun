@@ -9,7 +9,10 @@ struct PsicoQuizView: View {
 
     @State private var pending = -1
     @State private var revealed = false
-    @State private var sheetOpen = false
+    /// Explicação aberta (folha). Presa à raiz da tela, não à questão, para nunca se perder.
+    @State private var explanation: PsicoExplanationPayload?
+    /// "Avançar" tocado dentro da folha: avança só depois que a folha terminar de fechar.
+    @State private var advanceAfterSheet = false
     @State private var showPalette = false
     @State private var qStart = Date()
     @State private var confirmQuit = false
@@ -17,13 +20,32 @@ struct PsicoQuizView: View {
 
     var body: some View {
         Group {
-            if let s = store.current, s.idx < s.n, let it = store.item(s, s.idx) {
-                content(s, it)
+            if let s = store.current, s.idx < s.n {
+                if let it = store.item(s, s.idx) {
+                    content(s, it)
+                } else {
+                    unavailable(s)
+                }
             } else {
-                PF.bg.overlay(ProgressView())
+                PF.bg
             }
         }
         .background(PF.bg.ignoresSafeArea())
+        // Fica na raiz: dispara mesmo quando a próxima questão ainda não existe (Adaptativo).
+        .onChange(of: store.current?.idx) { _ in
+            store.ensureCurrentItem()
+            resetQuestion()
+        }
+        .sheet(item: $explanation, onDismiss: {
+            if advanceAfterSheet {
+                advanceAfterSheet = false
+                advance()
+            }
+        }) { e in
+            PsicoExplanationSheet(item: e.item, answer: e.answer, isLast: e.isLast,
+                                  onClose: { explanation = nil },
+                                  onNext: { advanceAfterSheet = true; explanation = nil })
+        }
         .onAppear {
             store.ensureCurrentItem()
             resetQuestion()
@@ -32,6 +54,28 @@ struct PsicoQuizView: View {
         .onReceive(NotificationCenter.default.publisher(for: UIApplication.willResignActiveNotification)) { _ in
             if isSim { addTime(); store.save() }
         }
+    }
+
+    /// A questão não pôde ser gerada (não deveria acontecer): nunca fica num carregamento infinito.
+    private func unavailable(_ s: PsicoSession) -> some View {
+        VStack(spacing: 14) {
+            Image(systemName: "exclamationmark.triangle").font(.system(size: 30)).foregroundColor(PF.muted)
+            Text("Não foi possível montar esta questão.").font(.system(size: 17, weight: .semibold))
+            HStack(spacing: 10) {
+                Button("Encerrar") { finish(early: true) }
+                    .buttonStyle(PFButtonStyle(kind: .ghost))
+                Button("Pular questão") {
+                    store.mutateCurrent { cur in
+                        if cur.idx < cur.items.count { cur.items[cur.idx].seed = PsicoStore.randomSeed() }
+                    }
+                }
+                .buttonStyle(PFButtonStyle(kind: .primary))
+            }
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(PF.bg.ignoresSafeArea())
+        .onAppear { store.ensureCurrentItem() }
     }
 
     private var isSim: Bool { store.current?.mode == "simulado" }
@@ -44,6 +88,7 @@ struct PsicoQuizView: View {
         let sim = s.mode == "simulado"
         let locked = !sim && a != nil
         let showFb = locked && (s.fb == "auto" || (s.fb == "eye" && revealed))
+        let payload = a.map { PsicoExplanationPayload(id: "\(s.id)-\(i)", item: it, answer: $0, isLast: i >= s.n - 1) }
         let showCol = showFb || (locked && s.fb == "eye" && store.settings.showCorrect)
         let sel = a?.c ?? pending
 
@@ -73,19 +118,10 @@ struct PsicoQuizView: View {
                 .scrollIndicators(.hidden)
             }
             .safeAreaInset(edge: .bottom, spacing: 0) {
-                bottomBar(s, it, a, sim: sim, locked: locked, showFb: showFb)
+                bottomBar(s, it, a, sim: sim, locked: locked, showFb: showFb, payload: payload)
             }
         }
         .task(id: deadlineToken(s, locked: locked)) { await waitDeadline(locked: locked) }
-        .onChange(of: s.idx) { _ in
-            store.ensureCurrentItem()
-            resetQuestion()
-        }
-        .sheet(isPresented: Binding(get: { showFb && sheetOpen }, set: { sheetOpen = $0 })) {
-            PsicoExplanationSheet(item: it, answer: a, isLast: i >= s.n - 1,
-                                  onClose: { sheetOpen = false },
-                                  onNext: { sheetOpen = false; advance() })
-        }
         .alert("Encerrar agora?", isPresented: $confirmQuit) {
             Button("Continuar", role: .cancel) {}
             Button("Encerrar", role: .destructive) {
@@ -178,7 +214,8 @@ struct PsicoQuizView: View {
     }
 
     @ViewBuilder
-    private func bottomBar(_ s: PsicoSession, _ it: PsicoItem, _ a: PsicoAnswer?, sim: Bool, locked: Bool, showFb: Bool) -> some View {
+    private func bottomBar(_ s: PsicoSession, _ it: PsicoItem, _ a: PsicoAnswer?, sim: Bool, locked: Bool, showFb: Bool,
+                           payload: PsicoExplanationPayload?) -> some View {
         let last = s.idx >= s.n - 1
         HStack(spacing: 10) {
             if sim {
@@ -216,7 +253,7 @@ struct PsicoQuizView: View {
                     Button {
                         Haptics.play("light")
                         revealed = true
-                        sheetOpen = true
+                        explanation = payload
                     } label: {
                         Label(showFb ? "Abrir explicação" : "Ver explicação", systemImage: "eye")
                     }
@@ -264,7 +301,8 @@ struct PsicoQuizView: View {
     private func resetQuestion() {
         pending = -1
         revealed = false
-        sheetOpen = false
+        explanation = nil
+        advanceAfterSheet = false
         qStart = Date()
         if let s = store.current {
             let next = s.idx + 1
@@ -293,7 +331,9 @@ struct PsicoQuizView: View {
         guard let a = store.lockAnswer(c, ms: ms, timeout: timeout) else { return }
         pending = -1
         revealed = false
-        sheetOpen = s.fb == "auto"
+        if s.fb == "auto", let it = store.item(s, s.idx) {
+            explanation = PsicoExplanationPayload(id: "\(s.id)-\(s.idx)", item: it, answer: a, isLast: s.idx >= s.n - 1)
+        }
         let colored = s.fb == "auto" || (s.fb == "eye" && store.settings.showCorrect)
         Haptics.play(colored ? (a.ok ? "success" : "error") : "light")
     }
@@ -306,6 +346,7 @@ struct PsicoQuizView: View {
             finish(early: false)
         } else {
             store.mutateCurrent { $0.idx += 1 }
+            store.ensureCurrentItem()
         }
     }
 
@@ -348,14 +389,12 @@ struct PsicoQuizView: View {
 
     private func finish(early: Bool, message: String? = nil) {
         let id = store.finish(early: early)
-        sheetOpen = false
-        nav.quizShown = false
+        explanation = nil
         if let m = message { store.showToast(m) }
-        if let id = id {
-            DispatchQueue.main.asyncAfter(deadline: .now() + 0.15) { nav.openResult(id) }
-        } else {
-            nav.tab = .home
-        }
+        // O resultado abre depois que a tela da questão terminar de fechar.
+        nav.pendingResult = id
+        if id == nil { nav.tab = .home }
+        nav.quizShown = false
     }
 
     // MARK: Tempo limite
@@ -427,4 +466,12 @@ struct PsicoExplanationSheet: View {
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }
+}
+
+/// Conteúdo da folha de explicação de uma questão já respondida.
+struct PsicoExplanationPayload: Identifiable {
+    let id: String
+    let item: PsicoItem
+    let answer: PsicoAnswer
+    let isLast: Bool
 }

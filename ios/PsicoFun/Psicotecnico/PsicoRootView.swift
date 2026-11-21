@@ -29,6 +29,8 @@ final class PsicoNav: ObservableObject {
     @Published var homePath: [PsicoRoute] = []
     @Published var statsPath: [PsicoRoute] = []
     @Published var quizShown = false
+    /// Sessão recém-terminada cujo resultado abre quando a tela da questão fechar.
+    var pendingResult: String?
     var draft: PsicoSetupDraft?
 
     func openSetup(_ mode: String) {
@@ -73,13 +75,18 @@ struct PsicoRootView: View {
             }
             .tint(PF.acc)
 
-            if nav.quizShown, store.current != nil {
-                PsicoQuizView(store: store, nav: nav)
-                    .transition(.move(edge: .bottom))
-                    .zIndex(1)
-            }
         }
-        .animation(.spring(response: 0.38, dampingFraction: 0.9), value: nav.quizShown)
+        // A questão ocupa a tela inteira (inclusive o seletor Psicotécnico | Palográfico do topo),
+        // e a folha de explicação é apresentada a partir dela.
+        .fullScreenCover(isPresented: $nav.quizShown, onDismiss: {
+            if let id = nav.pendingResult {
+                nav.pendingResult = nil
+                nav.openResult(id)
+            }
+        }) {
+            PsicoQuizView(store: store, nav: nav)
+                .tint(PF.acc)
+        }
         .overlay(alignment: .bottom) {
             if let t = store.toast {
                 Text(t)
@@ -88,7 +95,7 @@ struct PsicoRootView: View {
                     .foregroundColor(PFGlass.available ? PF.ink : PF.paper)
                     .pfGlass(Capsule(), fallback: PF.ink)
                     .padding(.horizontal, 16)
-                    .padding(.bottom, nav.quizShown ? 100 : 64)
+                    .padding(.bottom, 64)
                     .transition(.move(edge: .bottom).combined(with: .opacity))
                     .allowsHitTesting(false)
             }
