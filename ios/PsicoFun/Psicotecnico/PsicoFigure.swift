@@ -17,6 +17,12 @@ struct PsicoFigure: View, Equatable {
     }
 }
 
+/// Preferências de desenho das figuras (só aparência; não mudam a geração das questões).
+enum PsicoDisplay {
+    static let emphasizeSizeKey = "pf.emphasizeSize"
+    static var emphasizeSize: Bool { UserDefaults.standard.object(forKey: emphasizeSizeKey) as? Bool ?? true }
+}
+
 enum PsicoDraw {
     static let sides: [String: Int] = ["triangle": 3, "square": 4, "pentagon": 5, "hexagon": 6]
 
@@ -32,7 +38,9 @@ enum PsicoDraw {
         ]
     }()
     static let baseR: [Int: CGFloat] = [1: 30, 2: 17, 3: 16, 4: 15, 5: 12, 6: 11, 7: 10, 8: 10, 9: 10]
-    static let sizeF: [CGFloat] = [0.55, 0.78, 1]
+    /// Escala de cada tamanho (pequeno, médio, grande). Só muda o desenho, nunca a questão.
+    /// "Realçar diferença de tamanho" (padrão) separa mais os três tamanhos na tela do celular.
+    static var sizeF: [CGFloat] { PsicoDisplay.emphasizeSize ? [0.42, 0.70, 1] : [0.55, 0.78, 1] }
     static let lineSeg: [(CGFloat, CGFloat, CGFloat, CGFloat)] = [
         (50, 8, 50, 92), (8, 50, 92, 50), (14, 14, 86, 86), (86, 14, 14, 86), (14, 14, 86, 14), (14, 86, 86, 86),
     ]

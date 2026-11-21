@@ -10,6 +10,7 @@ struct PsicoSettingsView: View {
     @State private var fileImporter = false
     @State private var pendingBackup: PsicoBackup?
     @State private var confirmClear = false
+    @AppStorage(PsicoDisplay.emphasizeSizeKey) private var emphasizeSize = true
 
     private let feedbackOptions: [(String, String, String)] = [
         ("eye", "Escondida no olho", "Depois de responder, aparece um olho; a resposta só aparece se você tocar."),
@@ -51,6 +52,10 @@ struct PsicoSettingsView: View {
                 PFToggleRow(icon: "timer", title: "Mostrar cronômetro", isOn: binding(\.timer))
                 PFDivider()
                 PFToggleRow(icon: "speedometer", title: "Mostrar o nível da questão", isOn: binding(\.showLevel))
+                PFDivider()
+                PFToggleRow(icon: "arrow.up.left.and.arrow.down.right", title: "Realçar diferença de tamanho",
+                            subtitle: "Formas pequenas ficam menores e as médias mais distintas das grandes. Só muda o desenho: as questões são as mesmas.",
+                            isOn: $emphasizeSize)
                 PFDivider()
                 VStack(alignment: .leading, spacing: PF.Space.s) {
                     HStack(spacing: PF.Space.m) {
