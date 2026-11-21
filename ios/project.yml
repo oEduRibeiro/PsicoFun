@@ -44,6 +44,9 @@ targets:
         # Palográfico: bips/vibração com a tela bloqueada e Live Activity.
         UIBackgroundModes:
           - audio
+          # FC do relógio (opcional): manter a conexão Bluetooth durante a sessão.
+          - bluetooth-central
+        NSBluetoothAlwaysUsageDescription: O PsicoFun usa o Bluetooth para ler a frequência cardíaca que o seu relógio transmite durante o Palográfico. Os dados ficam só neste aparelho.
         NSSupportsLiveActivities: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait

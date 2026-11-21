@@ -56,6 +56,8 @@ struct PaloRecord: Codable, Identifiable, Equatable {
     var note: String
     /// Maior desvio medido entre o bip agendado e o disparado (ms). Diagnóstico.
     var maxBeepDeviationMs: Double?
+    /// FC por ciclo, se o recurso estava ligado. nil = recurso desligado (ou sessão antiga).
+    var heartRate: PaloHeartRate? = nil
 
     var metrics: PaloMetrics { PaloMetrics(counts: counts) }
 }
@@ -132,6 +134,9 @@ enum PaloKeys {
     static let vibration = "palo.vibration"
     static let notificationFallback = "palo.notificationFallback"
     static let mode = "palo.mode"
+    static let heartRate = "palo.heartRate"
+    static let hrDeviceID = "palo.hr.deviceID"
+    static let hrDeviceName = "palo.hr.deviceName"
     static let bandMedia = "palo.band.media"
     static let bandAlta = "palo.band.alta"
     static let bandSuperior = "palo.band.superior"
@@ -141,6 +146,7 @@ enum PaloKeys {
             sound: true,
             vibration: true,
             notificationFallback: false,
+            heartRate: false,
             mode: PaloMode.treino.rawValue,
             bandMedia: PaloBands.defaults.mediaMin,
             bandAlta: PaloBands.defaults.altaMin,
