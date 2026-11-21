@@ -26,6 +26,15 @@
       },
       "versions": [
         {
+          "version": "1.0.12",
+          "buildVersion": "12",
+          "date": "2026-11-21T14:50:37Z",
+          "localizedDescription": "Interface em SwiftUI nativo + Liquid Glass, FC do Palográfico e backup dos dois modos (#3, inclui #4)",
+          "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.12/PsicoFun.ipa",
+          "size": 935637,
+          "minOSVersion": "15.0"
+        },
+        {
           "version": "1.0.4",
           "buildVersion": "4",
           "date": "2026-11-21T14:03:24Z",
@@ -44,11 +53,11 @@
           "minOSVersion": "15.0"
         }
       ],
-      "version": "1.0.4",
-      "versionDate": "2026-11-21T14:03:24Z",
-      "versionDescription": "Merge pull request #2 from oEduRibeiro/claude/project-thread-yy7gwg",
-      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.4/PsicoFun.ipa",
-      "size": 321749
+      "version": "1.0.12",
+      "versionDate": "2026-11-21T14:50:37Z",
+      "versionDescription": "Interface em SwiftUI nativo + Liquid Glass, FC do Palográfico e backup dos dois modos (#3, inclui #4)",
+      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.12/PsicoFun.ipa",
+      "size": 935637
     }
   ],
   "news": []
