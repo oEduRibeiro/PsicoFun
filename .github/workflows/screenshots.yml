@@ -1,0 +1,108 @@
+name: Capturas de tela (Simulador)
+
+# Abre o app no Simulador com dados de exemplo (só existem no Simulador) e salva capturas
+# das telas em docs/screenshots/ no próprio branch do PR.
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - 'ios/**'
+      - '.github/workflows/screenshots.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: shots-${{ github.head_ref || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  shots:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.head_ref || github.ref_name }}
+
+      - name: Selecionar Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$X" ]; then sudo xcode-select -s "$X/Contents/Developer"; fi
+          xcodebuild -version
+
+      - name: Gerar projeto e compilar para o Simulador
+        run: |
+          brew install xcodegen
+          cd ios && xcodegen generate
+          xcodebuild -project PsicoFun.xcodeproj -target PsicoFun -configuration Debug \
+            -sdk iphonesimulator ARCHS=arm64 ONLY_ACTIVE_ARCH=NO SYMROOT="$PWD/build" \
+            CODE_SIGN_IDENTITY=- CODE_SIGNING_ALLOWED=YES CODE_SIGNING_REQUIRED=NO DEVELOPMENT_TEAM="" \
+            build | tee build.log | grep -E '^(\*\*|error)' || true
+          grep -q 'BUILD SUCCEEDED' build.log || { grep -E ': (error|fatal error):' build.log | sort -u | head -40; exit 1; }
+
+      - name: Capturar
+        run: |
+          UDID=$(xcrun simctl list devices available -j | python3 -c '
+          import json, sys
+          d = json.load(sys.stdin)["devices"]
+          def ver(r):
+              return [int(x) for x in r.split("iOS-")[-1].split("-") if x.isdigit()]
+          for r in sorted([r for r in d if "iOS" in r], key=ver, reverse=True):
+              ds = [x for x in d[r] if x["name"].startswith("iPhone") and "Pro" in x["name"] and "Max" not in x["name"]]
+              if ds:
+                  print(ds[0]["udid"]); break
+          ')
+          echo "Simulador: $UDID"
+          xcrun simctl boot "$UDID"
+          xcrun simctl bootstatus "$UDID" -b
+          xcrun simctl status_bar "$UDID" override --time 9:41 --batteryState charged --batteryLevel 100 --cellularBars 4 --wifiBars 3 || true
+          xcrun simctl install "$UDID" ios/build/Debug-iphonesimulator/PsicoFun.app
+          OUT=docs/screenshots
+          rm -rf "$OUT" && mkdir -p "$OUT"
+          shot() { # tela aparência espera
+            xcrun simctl ui "$UDID" appearance "$2"
+            xcrun simctl terminate "$UDID" com.oeduribeiro.psicofun 2>/dev/null || true
+            xcrun simctl launch "$UDID" com.oeduribeiro.psicofun -PFDemoScreen "$1"
+            sleep "$3"
+            xcrun simctl io "$UDID" screenshot "$OUT/$1-$2.png"
+            sips -s format jpeg -s formatOptions 72 --resampleWidth 600 "$OUT/$1-$2.png" --out "$OUT/$1-$2.jpg" >/dev/null
+            rm "$OUT/$1-$2.png"
+          }
+          # Primeira abertura (permissões, cache de fontes).
+          xcrun simctl launch "$UDID" com.oeduribeiro.psicofun; sleep 8
+          shot prep light 5
+          shot prep dark 5
+          shot session light 7
+          shot entry light 5
+          shot result light 5
+          shot result dark 5
+          shot hr light 5
+          shot hr dark 5
+          shot history light 5
+          shot bands light 4
+          shot settings light 4
+          shot stats light 4
+          shot live light 5
+          shot psico-home light 9
+          shot psico-setup light 6
+          shot psico-quiz light 8
+          shot psico-quiz dark 8
+          shot psico-explanation light 7
+          shot psico-result light 7
+          shot psico-stats light 7
+          ls -lh "$OUT"
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: docs/screenshots
+
+      - name: Salvar no branch do PR
+        if: github.event_name == 'pull_request'
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add docs/screenshots
+          git diff --cached --quiet && exit 0
+          git commit -m "Capturas de tela do Simulador [skip ci]"
+          for i in 1 2 3; do git push origin HEAD:${{ github.head_ref }} && break; git pull --rebase origin ${{ github.head_ref }}; done

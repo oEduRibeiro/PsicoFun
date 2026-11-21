@@ -60,7 +60,7 @@ struct PsicoQuizView: View {
     private func unavailable(_ s: PsicoSession) -> some View {
         VStack(spacing: 14) {
             Image(systemName: "exclamationmark.triangle").font(.system(size: 30)).foregroundColor(PF.muted)
-            Text("Não foi possível montar esta questão.").font(.system(size: 17, weight: .semibold))
+            Text("Não foi possível montar esta questão.").pfText(.headline)
             HStack(spacing: 10) {
                 Button("Encerrar") { finish(early: true) }
                     .buttonStyle(PFButtonStyle(kind: .ghost))
@@ -159,7 +159,7 @@ struct PsicoQuizView: View {
                     .monospacedDigit()
                 Spacer(minLength: 4)
                 Text((PsicoText.short[it.fam] ?? it.fam) + (st.showLevel ? " · nível \(it.lvl)" : ""))
-                    .font(.system(size: 13, weight: .semibold))
+                    .pfText(.caption, weight: .semibold)
                     .foregroundColor(PF.muted)
                     .padding(.horizontal, 10).padding(.vertical, 3)
                     .pfGlass(Capsule(), fallback: PF.paper)
@@ -173,7 +173,7 @@ struct PsicoQuizView: View {
                     confirmQuit = true
                 } label: {
                     Image(systemName: "xmark")
-                        .font(.system(size: 16, weight: .semibold))
+                        .pfText(.headline)
                         .foregroundColor(PF.muted)
                         .frame(width: 40, height: 40)
                         .pfGlass(Circle(), interactive: true, fallback: .clear)
@@ -238,7 +238,7 @@ struct PsicoQuizView: View {
                 }
             } else if !locked {
                 Text(pending < 0 ? "Escolha uma alternativa" : "Marcou \(it.letters[pending]). Pode trocar.")
-                    .font(.system(size: 14))
+                    .pfText(.footnote)
                     .foregroundColor(PF.muted)
                     .lineLimit(2)
                 Spacer(minLength: 0)
@@ -248,7 +248,7 @@ struct PsicoQuizView: View {
                     .disabled(pending < 0)
             } else {
                 if s.fb == "off" {
-                    Text("Resposta registrada.").font(.system(size: 14)).foregroundColor(PF.muted)
+                    Text("Resposta registrada.").pfText(.footnote).foregroundColor(PF.muted)
                 } else {
                     Button {
                         Haptics.play("light")
@@ -284,7 +284,7 @@ struct PsicoQuizView: View {
                     store.mutateCurrent { $0.idx = j }
                 } label: {
                     Text("\(j + 1)")
-                        .font(.system(size: 15, weight: .semibold))
+                        .pfText(.callout, weight: .semibold)
                         .foregroundColor(cur ? PF.acc : PF.ink)
                         .frame(maxWidth: .infinity, minHeight: 44)
                         .background(done ? PF.soft : PF.paper, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -448,7 +448,7 @@ struct PsicoExplanationSheet: View {
                 }
                 .foregroundColor(PF.ink)
                 .accessibilityLabel("Fechar explicação")
-                Text("Explicação").font(.system(size: 17, weight: .bold))
+                Text("Explicação").pfText(.headline, weight: .bold)
                 Spacer()
                 Button(isLast ? "Ver resultado" : "Avançar →", action: onNext)
                     .buttonStyle(PFButtonStyle(kind: .primary, small: true))
@@ -456,7 +456,7 @@ struct PsicoExplanationSheet: View {
             .padding(.horizontal, 16)
             .padding(.top, 18)
             .padding(.bottom, 10)
-            Divider().overlay(PF.line)
+            PFDivider()
             ScrollView {
                 PsicoExplanation(item: item, answer: answer)
                     .padding(16)

@@ -25,12 +25,18 @@ final class RootContainerViewController: UIViewController {
     }()
     private lazy var paloController: UIHostingController<PalograficoRootView> = {
         let vc = UIHostingController(rootView: PalograficoRootView(engine: engine, store: store))
-        vc.view.backgroundColor = .systemGroupedBackground
+        vc.view.backgroundColor = Theme.background
         return vc
     }()
 
     private let bar = UIView()
-    private let segmented = UISegmentedControl(items: ["Psicotécnico", "Palográfico"])
+    private let switcherModel = RootModeModel()
+    private lazy var switcherHost: UIHostingController<PFModeSwitcher> = {
+        let vc = UIHostingController(rootView: PFModeSwitcher(model: switcherModel))
+        vc.view.backgroundColor = .clear
+        vc.sizingOptions = .intrinsicContentSize
+        return vc
+    }()
     private let content = UIView()
     private var contentBelowBar: NSLayoutConstraint!
     private var contentAtTop: NSLayoutConstraint!
@@ -54,13 +60,17 @@ final class RootContainerViewController: UIViewController {
 
         bar.translatesAutoresizingMaskIntoConstraints = false
         bar.backgroundColor = Theme.background
-        segmented.translatesAutoresizingMaskIntoConstraints = false
-        segmented.addTarget(self, action: #selector(segmentChanged), for: .valueChanged)
+        let switcher = switcherHost.view!
+        switcher.translatesAutoresizingMaskIntoConstraints = false
+        switcher.setContentHuggingPriority(.required, for: .vertical)
+        switcher.setContentCompressionResistancePriority(.required, for: .vertical)
         content.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(content)
         view.addSubview(bar)
-        bar.addSubview(segmented)
+        addChild(switcherHost)
+        bar.addSubview(switcher)
+        switcherHost.didMove(toParent: self)
 
         contentBelowBar = content.topAnchor.constraint(equalTo: bar.bottomAnchor)
         contentAtTop = content.topAnchor.constraint(equalTo: view.topAnchor)
@@ -68,12 +78,10 @@ final class RootContainerViewController: UIViewController {
             bar.topAnchor.constraint(equalTo: view.topAnchor),
             bar.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             bar.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            segmented.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor, constant: 6),
-            segmented.bottomAnchor.constraint(equalTo: bar.bottomAnchor, constant: -8),
-            segmented.centerXAnchor.constraint(equalTo: bar.centerXAnchor),
-            segmented.leadingAnchor.constraint(greaterThanOrEqualTo: bar.layoutMarginsGuide.leadingAnchor),
-            segmented.widthAnchor.constraint(lessThanOrEqualToConstant: 420),
-            segmented.widthAnchor.constraint(equalTo: bar.widthAnchor, constant: -32).withPriority(.defaultHigh),
+            switcher.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            switcher.bottomAnchor.constraint(equalTo: bar.bottomAnchor),
+            switcher.leadingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.leadingAnchor),
+            switcher.trailingAnchor.constraint(equalTo: view.safeAreaLayoutGuide.trailingAnchor),
             contentBelowBar,
             content.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             content.trailingAnchor.constraint(equalTo: view.trailingAnchor),
@@ -85,11 +93,20 @@ final class RootContainerViewController: UIViewController {
 
         let saved = Mode(rawValue: UserDefaults.standard.integer(forKey: Self.modeKey)) ?? .psicotecnico
         mode = saved
-        segmented.selectedSegmentIndex = saved.rawValue
+        switcherModel.mode = saved.rawValue
+        switcherModel.onChange = { [weak self] raw in self?.modeSelected(raw) }
         showMode(saved)
 
         PsicoEngine.shared.warmUp()
         PsicoMigration.runIfNeeded(store: psicoStore)
+
+        #if targetEnvironment(simulator)
+        PFDemo.run(on: self, engine: engine, store: store, psicoStore: psicoStore) { [weak self] raw in
+            self?.switcherModel.mode = raw
+            self?.mode = Mode(rawValue: raw) ?? .psicotecnico
+            self?.showMode(Mode(rawValue: raw) ?? .psicotecnico)
+        }
+        #endif
 
         engine.$isRunning
             .receive(on: DispatchQueue.main)
@@ -114,12 +131,11 @@ final class RootContainerViewController: UIViewController {
         child.didMove(toParent: self)
     }
 
-    @objc private func segmentChanged() {
-        let new = Mode(rawValue: segmented.selectedSegmentIndex) ?? .psicotecnico
+    private func modeSelected(_ raw: Int) {
+        let new = Mode(rawValue: raw) ?? .psicotecnico
         guard new != mode else { return }
         mode = new
         showMode(new)
-        Haptics.play("selection")
     }
 
     private func showMode(_ mode: Mode) {
@@ -130,7 +146,7 @@ final class RootContainerViewController: UIViewController {
 
     /// Esconde o seletor (e a barra de status) durante a sessão; os toggles ficam travados.
     private func updateChrome(animated: Bool) {
-        segmented.isEnabled = !sessionRunning
+        switcherHost.view.isUserInteractionEnabled = !sessionRunning
         if sessionRunning {
             contentBelowBar.isActive = false
             contentAtTop.isActive = true
@@ -152,9 +168,37 @@ final class RootContainerViewController: UIViewController {
     }
 }
 
-private extension NSLayoutConstraint {
-    func withPriority(_ p: UILayoutPriority) -> NSLayoutConstraint {
-        priority = p
-        return self
+/// Estado do seletor do topo (compartilhado entre o UIKit e a SwiftUI).
+final class RootModeModel: ObservableObject {
+    @Published var mode = 0
+    var onChange: ((Int) -> Void)?
+
+    func select(_ raw: Int) {
+        guard raw != mode else { return }
+        mode = raw
+        onChange?(raw)
+    }
+}
+
+/// Seletor do topo: Psicotécnico | Palográfico, no mesmo controle segmentado do app.
+struct PFModeSwitcher: View {
+    @ObservedObject var model: RootModeModel
+
+    private let options: [PFSegmented<Int>.Option] = [
+        PFSegmented<Int>.Option(value: 0, title: "Psicotécnico", icon: "square.grid.3x3.fill"),
+        PFSegmented<Int>.Option(value: 1, title: "Palográfico", icon: "pencil.line"),
+    ]
+
+    var body: some View {
+        PFSegmented<Int>(options: options, selection: Binding(get: { model.mode }, set: { model.select($0) }))
+            .frame(maxWidth: 440)
+            .padding(.horizontal, PF.Space.screen)
+            .padding(.top, 6)
+            .padding(.bottom, 8)
+            .frame(maxWidth: .infinity)
+            .background(PF.bg)
+            .fixedSize(horizontal: false, vertical: true)
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("Modo do app")
     }
 }

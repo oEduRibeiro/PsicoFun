@@ -90,7 +90,7 @@ struct PsicoRootView: View {
         .overlay(alignment: .bottom) {
             if let t = store.toast {
                 Text(t)
-                    .font(.system(size: 14, weight: .semibold))
+                    .pfText(.footnote, weight: .semibold)
                     .padding(.horizontal, 16).padding(.vertical, 10)
                     .foregroundColor(PFGlass.available ? PF.ink : PF.paper)
                     .pfGlass(Capsule(), fallback: PF.ink)

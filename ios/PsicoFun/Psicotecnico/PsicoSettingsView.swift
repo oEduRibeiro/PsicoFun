@@ -10,6 +10,7 @@ struct PsicoSettingsView: View {
     @State private var fileImporter = false
     @State private var pendingBackup: PsicoBackup?
     @State private var confirmClear = false
+    @AppStorage(PsicoDisplay.emphasizeSizeKey) private var emphasizeSize = true
 
     private let feedbackOptions: [(String, String, String)] = [
         ("eye", "Escondida no olho", "Depois de responder, aparece um olho; a resposta só aparece se você tocar."),
@@ -19,82 +20,95 @@ struct PsicoSettingsView: View {
 
     var body: some View {
         let st = store.settings
-        Form {
-            Section {
+        PFScreen {
+            PFEyebrow("Resposta nos modos de treino")
+            PFCard(spacing: PF.Space.s) {
                 ForEach(feedbackOptions.indices, id: \.self) { i in
                     let opt = feedbackOptions[i]
+                    if i > 0 { PFDivider() }
                     Button {
                         guard st.feedback != opt.0 else { return }
                         Haptics.play("selection")
-                        store.updateSettings { $0.feedback = opt.0 }
+                        withAnimation(PF.Motion.quick) { store.updateSettings { $0.feedback = opt.0 } }
                     } label: {
-                        HStack(alignment: .top, spacing: 12) {
-                            VStack(alignment: .leading, spacing: 2) {
-                                Text(opt.1).foregroundColor(.primary).font(.body.weight(.semibold))
-                                Text(opt.2).font(.subheadline).foregroundColor(.secondary)
-                                    .fixedSize(horizontal: false, vertical: true)
-                            }
-                            Spacer(minLength: 8)
-                            Image(systemName: "checkmark")
-                                .font(.body.weight(.semibold))
-                                .foregroundColor(PF.acc)
-                                .opacity(st.feedback == opt.0 ? 1 : 0)
-                        }
-                        .contentShape(Rectangle())
+                        feedbackRow(opt, on: st.feedback == opt.0)
                     }
                     .buttonStyle(.plain)
+                    .accessibilityAddTraits(st.feedback == opt.0 ? [.isSelected, .isButton] : .isButton)
                 }
-                Toggle("Mostrar alternativa correta", isOn: binding(\.showCorrect))
+                PFDivider()
+                PFToggleRow(icon: "checkmark.circle", title: "Mostrar alternativa correta",
+                            subtitle: "Pinta a certa e a errada ao confirmar, mesmo com a explicação escondida no olho.",
+                            isOn: binding(\.showCorrect))
                     .disabled(st.feedback != "eye")
-            } header: {
-                Text("Resposta nos modos de treino")
-            } footer: {
-                Text("Vale para Treino livre, Rampa, Adaptativo e Ponto fraco. O Simulado sempre mostra só no final. \"Mostrar alternativa correta\" pinta a certa e a errada ao confirmar, mesmo com a explicação escondida no olho.")
+                    .opacity(st.feedback != "eye" ? 0.5 : 1)
+                Text("Vale para Treino livre, Rampa, Adaptativo e Ponto fraco. O Simulado sempre mostra só no final.")
+                    .pfText(.footnote).foregroundColor(PF.muted)
+                    .fixedSize(horizontal: false, vertical: true)
             }
 
-            Section {
-                Toggle("Mostrar cronômetro", isOn: binding(\.timer))
-                Toggle("Mostrar o nível da questão", isOn: binding(\.showLevel))
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Tempo limite por questão (treino)")
-                    Picker("Tempo limite por questão", selection: Binding(get: { st.qTime }, set: { v in
-                        Haptics.play("selection")
-                        store.updateSettings { $0.qTime = v }
-                    })) {
-                        Text("Sem limite").tag(0)
-                        Text("30 s").tag(30)
-                        Text("60 s").tag(60)
-                        Text("90 s").tag(90)
+            PFEyebrow("Durante a questão")
+            PFCard(spacing: PF.Space.s) {
+                PFToggleRow(icon: "timer", title: "Mostrar cronômetro", isOn: binding(\.timer))
+                PFDivider()
+                PFToggleRow(icon: "speedometer", title: "Mostrar o nível da questão", isOn: binding(\.showLevel))
+                PFDivider()
+                PFToggleRow(icon: "arrow.up.left.and.arrow.down.right", title: "Realçar diferença de tamanho",
+                            subtitle: "Formas pequenas ficam menores e as médias mais distintas das grandes. Só muda o desenho: as questões são as mesmas.",
+                            isOn: $emphasizeSize)
+                PFDivider()
+                VStack(alignment: .leading, spacing: PF.Space.s) {
+                    HStack(spacing: PF.Space.m) {
+                        PFIconBadge(icon: "hourglass", size: 30)
+                        Text("Tempo limite por questão (treino)").pfText(.body).foregroundColor(PF.ink)
                     }
-                    .pickerStyle(.segmented)
-                    .labelsHidden()
+                    PFSegmented<Int>(options: qTimeOptions, selection: Binding(get: { st.qTime }, set: { v in
+                        store.updateSettings { $0.qTime = v }
+                    }), compact: true)
                 }
-                .padding(.vertical, 4)
-            } header: {
-                Text("Durante a questão")
+                .padding(.vertical, PF.Space.xs)
             }
 
-            Section {
-                Button { exportBackup() } label: { Label("Exportar backup", systemImage: "square.and.arrow.up") }
-                Button { importChoice = true } label: { Label("Restaurar backup", systemImage: "arrow.counterclockwise") }
-                Button(role: .destructive) { confirmClear = true } label: { Label("Apagar histórico", systemImage: "trash") }
-            } header: {
-                Text("Seus dados")
-            } footer: {
+            PFEyebrow("Seus dados")
+            PFCard(spacing: PF.Space.s) {
+                Button { exportBackup() } label: {
+                    PFRow(icon: "square.and.arrow.up", title: "Exportar backup", subtitle: "Arquivo .json com os dois modos", chevron: true)
+                }
+                .buttonStyle(.plain)
+                PFDivider()
+                Button { importChoice = true } label: {
+                    PFRow(icon: "arrow.counterclockwise", title: "Restaurar backup", subtitle: "De um arquivo ou de texto copiado", chevron: true)
+                }
+                .buttonStyle(.plain)
+                PFDivider()
+                Button { confirmClear = true } label: {
+                    PFRow(icon: "trash", tone: .bad, title: "Apagar histórico do Psicotécnico")
+                }
+                .buttonStyle(.plain)
                 Text("Salvo neste aparelho · \(store.db.sessions.count) sessões guardadas. O backup leva os dois modos: histórico e ajustes do Psicotécnico e do Palográfico. Para levar tudo para outro aparelho, exporte aqui e restaure lá.")
+                    .pfText(.footnote).foregroundColor(PF.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, PF.Space.xs)
             }
 
-            Section {
-                DisclosureGroup("Como as questões são feitas") {
+            PFCard {
+                DisclosureGroup {
                     VStack(alignment: .leading, spacing: 10) {
                         Text("Cada questão nasce de regras, não de desenho livre: o gerador sorteia atributos (forma, quantidade, tamanho, preenchimento, rotação, posição, linhas) e regras para eles (progressão, alternância, ciclo, distribuição de três, soma, subtração, união e diferença de linhas), no modelo das matrizes de Raven.")
                         Text("Antes de aparecer, um solucionador separado tenta todas as regras possíveis em cada atributo. Se mais de uma resposta for defensável, a questão é descartada. As alternativas erradas mudam um ou mais atributos de forma equilibrada, para que a correta não se destaque por “ser a mais parecida com as outras”. Cada alternativa errada guarda qual regra ela viola — é assim que o relatório sabe o que você mais erra.")
                         Text("A mesma semente gera sempre a mesma questão, por isso a revisão de sessões antigas mostra exatamente o que você viu.")
                     }
-                    .font(.subheadline)
-                    .foregroundColor(.secondary)
-                    .padding(.vertical, 4)
+                    .pfText(.footnote)
+                    .foregroundColor(PF.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+                    .padding(.top, PF.Space.s)
+                } label: {
+                    HStack(spacing: PF.Space.m) {
+                        PFIconBadge(icon: "questionmark", size: 30)
+                        Text("Como as questões são feitas").pfText(.body).foregroundColor(PF.ink)
+                    }
                 }
+                .tint(PF.ink)
             }
         }
         .tint(PF.acc)
@@ -136,6 +150,32 @@ struct PsicoSettingsView: View {
         } message: {
             Text("Sessões, estatísticas e nível estimado serão apagados deste aparelho. Os ajustes continuam.")
         }
+    }
+
+    private let qTimeOptions: [PFSegmented<Int>.Option] = [
+        PFSegmented<Int>.Option(value: 0, title: "Sem limite"),
+        PFSegmented<Int>.Option(value: 30, title: "30 s"),
+        PFSegmented<Int>.Option(value: 60, title: "60 s"),
+        PFSegmented<Int>.Option(value: 90, title: "90 s"),
+    ]
+
+    private func feedbackRow(_ opt: (String, String, String), on: Bool) -> some View {
+        HStack(alignment: .top, spacing: PF.Space.m) {
+            ZStack {
+                Circle().stroke(on ? PF.acc : PF.line, lineWidth: 2).frame(width: 22, height: 22)
+                if on { Circle().fill(PF.acc).frame(width: 12, height: 12).transition(.scale) }
+            }
+            .padding(.top, 2)
+            .accessibilityHidden(true)
+            VStack(alignment: .leading, spacing: 2) {
+                Text(opt.1).pfText(.body, weight: .semibold).foregroundColor(PF.ink)
+                Text(opt.2).pfText(.footnote).foregroundColor(PF.muted)
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+            Spacer(minLength: 0)
+        }
+        .padding(.vertical, PF.Space.xs)
+        .contentShape(Rectangle())
     }
 
     private var restoreMessage: String {

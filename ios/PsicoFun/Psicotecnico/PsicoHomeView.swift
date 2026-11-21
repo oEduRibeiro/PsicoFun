@@ -38,16 +38,15 @@ struct PsicoHomeView: View {
             VStack(alignment: .leading, spacing: 14) {
                 hero
                 if let cur = store.current { continueCard(cur) }
-                Text("Escolha um modo")
-                    .font(.system(size: 19, weight: .heavy))
-                    .padding(.top, 14)
+                PFEyebrow("Escolha um modo")
+                    .padding(.top, 6)
                 VStack(spacing: 10) {
                     ForEach(PsicoText.modes, id: \.key) { m in modeCard(m) }
                 }
                 if let w = store.homeWeak.first {
                     (Text("Seu ponto mais fraco agora: ") + Text(PsicoEngine.shared.keyLabel(w.k)).bold()
                         + Text(" (\(w.err) erros em \(w.seen))."))
-                        .font(.system(size: 15))
+                        .pfText(.callout)
                         .foregroundColor(PF.muted)
                         .padding(.top, 4)
                 }
@@ -84,14 +83,14 @@ struct PsicoHomeView: View {
             }
         }
         .padding(20)
-        .background(PF.paper, in: RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .overlay(RoundedRectangle(cornerRadius: 20, style: .continuous).stroke(PF.line, lineWidth: 1))
+        .background(PF.paper, in: RoundedRectangle(cornerRadius: PF.Radius.l, style: .continuous))
+        .overlay(RoundedRectangle(cornerRadius: PF.Radius.l, style: .continuous).stroke(PF.line, lineWidth: 1))
     }
 
     private func heroText(_ s: PsicoSummary) -> some View {
         VStack(alignment: .leading, spacing: 10) {
             Text("Psicotécnico visual")
-                .font(.system(size: 32, weight: .heavy))
+                .pfText(.largeTitle)
                 .lineSpacing(-4)
             Text("Sequências, matrizes, analogias, rotação e figura intrusa. Cada questão é gerada na hora a partir de regras e verificada por um solucionador: só existe uma resposta certa.")
                 .foregroundColor(PF.muted)
@@ -99,10 +98,10 @@ struct PsicoHomeView: View {
             if s.total > 0 {
                 Text("\(s.total) questões respondidas · \(PsicoFormat.pct(s.ok, s.total))% de acerto"
                      + (store.db.est.adapt.map { " · nível estimado " + PsicoFormat.level($0) } ?? ""))
-                    .font(.system(size: 15, weight: .semibold))
+                    .pfText(.callout, weight: .semibold)
             }
             Label("Salvo neste aparelho", systemImage: "iphone")
-                .font(.system(size: 13, weight: .semibold))
+                .pfText(.caption, weight: .semibold)
                 .foregroundColor(PF.muted)
         }
     }
@@ -133,14 +132,14 @@ struct PsicoHomeView: View {
             }
         }
         .padding(.horizontal, 16).padding(.vertical, 14)
-        .background(PF.ink, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
+        .background(PF.ink, in: RoundedRectangle(cornerRadius: PF.Radius.m, style: .continuous))
     }
 
     private func continueText(_ cur: PsicoSession, _ done: Int) -> some View {
         VStack(alignment: .leading, spacing: 2) {
-            Text("Sessão em andamento").font(.system(size: 16, weight: .bold)).foregroundColor(PF.paper)
+            Text("Sessão em andamento").pfText(.headline, weight: .bold).foregroundColor(PF.paper)
             Text("\(PsicoText.mode(cur.mode).name) · \(done) de \(cur.n) respondidas")
-                .font(.system(size: 14)).foregroundColor(PF.paper.opacity(0.75))
+                .pfText(.footnote).foregroundColor(PF.paper.opacity(0.75))
         }
     }
 
@@ -178,19 +177,19 @@ struct PsicoHomeView: View {
                 .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).stroke(PF.line, lineWidth: 1.5))
 
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(m.name).font(.system(size: 17, weight: .bold)).foregroundColor(PF.ink)
-                    Text(m.desc).font(.system(size: 14)).foregroundColor(PF.muted)
+                    Text(m.name).pfText(.headline, weight: .bold).foregroundColor(PF.ink)
+                    Text(m.desc).pfText(.footnote).foregroundColor(PF.muted)
                         .fixedSize(horizontal: false, vertical: true)
                     HStack(spacing: 6) {
                         PFEye(open: fb == "eye")
                         Text(store.fbText(m.key))
                     }
-                    .font(.system(size: 13, weight: .semibold))
+                    .pfText(.caption, weight: .semibold)
                     .foregroundColor(fb == "end" || fb == "off" ? PF.acc : PF.muted)
                     .padding(.top, 4)
                     if disabled {
                         Text("Disponível depois de errar algumas questões")
-                            .font(.system(size: 13, weight: .semibold)).foregroundColor(PF.muted)
+                            .pfText(.caption, weight: .semibold).foregroundColor(PF.muted)
                     }
                 }
                 .multilineTextAlignment(.leading)
@@ -198,8 +197,8 @@ struct PsicoHomeView: View {
                 Image(systemName: "chevron.right").font(.system(size: 14, weight: .semibold)).foregroundColor(PF.gray)
             }
             .padding(.horizontal, 14).padding(.vertical, 12)
-            .background(PF.paper, in: RoundedRectangle(cornerRadius: 16, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 16, style: .continuous).stroke(PF.line, lineWidth: 1))
+            .background(PF.paper, in: RoundedRectangle(cornerRadius: PF.Radius.m, style: .continuous))
+            .overlay(RoundedRectangle(cornerRadius: PF.Radius.m, style: .continuous).stroke(PF.line, lineWidth: 1))
             .opacity(disabled ? 0.55 : 1)
             .contentShape(Rectangle())
         }
@@ -210,7 +209,7 @@ struct PsicoHomeView: View {
 private struct InvertedGhostStyle: ButtonStyle {
     func makeBody(configuration: Configuration) -> some View {
         configuration.label
-            .font(.system(size: 16, weight: .semibold))
+            .pfText(.headline)
             .foregroundColor(PF.paper)
             .padding(.horizontal, 16)
             .frame(minHeight: 46)

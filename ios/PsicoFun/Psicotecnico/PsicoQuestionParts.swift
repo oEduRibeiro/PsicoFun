@@ -20,7 +20,7 @@ struct PsicoStimView: View {
                 }
                 PsicoQuestionCell(radius: phone ? 6 : 8)
             }
-            .frame(maxWidth: 760)
+            .frame(maxWidth: PF.Space.maxWidth)
         case "mat":
             LazyVGrid(columns: Array(repeating: GridItem(.flexible(), spacing: phone ? 6 : 8), count: 3), spacing: phone ? 6 : 8) {
                 ForEach(figs.indices, id: \.self) { i in PsicoCell(fig: figs[i]) }
@@ -47,7 +47,7 @@ struct PsicoStimView: View {
     }
 
     private func op(_ s: String) -> some View {
-        Text(s).font(.system(size: 16, weight: .heavy)).foregroundColor(PF.muted).fixedSize()
+        Text(s).pfText(.headline, weight: .heavy).foregroundColor(PF.muted).fixedSize()
     }
 }
 
@@ -136,7 +136,7 @@ struct PsicoOptionsGrid: View {
             .frame(width: w)
         } else {
             HStack(spacing: 10) { ForEach(0..<n, id: \.self) { i in button(i) } }
-                .frame(maxWidth: 760)
+                .frame(maxWidth: PF.Space.maxWidth)
         }
     }
 }
@@ -195,13 +195,13 @@ struct PsicoChainView: View {
             Text(lab).font(.system(size: 12, weight: .bold)).foregroundColor(PF.muted)
                 .frame(minWidth: 58, minHeight: 28, alignment: .leading)
         } else if let o = x.o {
-            Text(o).font(.system(size: 16, weight: .heavy)).foregroundColor(PF.muted).frame(minHeight: 28)
+            Text(o).pfText(.headline, weight: .heavy).foregroundColor(PF.muted).frame(minHeight: 28)
         } else if let f = x.fig {
             PsicoMini(fig: f, kind: x.ans == true ? .ans : .plain, caption: x.cap)
         } else if let v = x.v {
             let ans = x.ans == true
             Text(v)
-                .font(.system(size: 15, weight: .bold))
+                .pfText(.callout, weight: .bold)
                 .foregroundColor(ans ? PF.ok : PF.ink)
                 .lineLimit(1)
                 .padding(.horizontal, 9).padding(.vertical, 3)
@@ -225,14 +225,14 @@ struct PsicoExplanation: View {
             verdict(L, c)
             recap(c).padding(.top, 10)
 
-            Text("Como resolver").font(.system(size: 13, weight: .heavy)).foregroundColor(PF.muted)
+            Text("Como resolver").pfText(.caption, weight: .heavy).foregroundColor(PF.muted)
                 .padding(.top, 16).padding(.bottom, 4)
             ForEach(item.steps.indices, id: \.self) { i in
                 let st = item.steps[i]
                 VStack(alignment: .leading, spacing: 0) {
-                    if i > 0 { Divider().overlay(PF.line) }
+                    if i > 0 { PFDivider() }
                     (Text(st.h + ".").bold() + Text(" " + st.t))
-                        .font(.system(size: 15))
+                        .pfText(.callout)
                         .fixedSize(horizontal: false, vertical: true)
                         .padding(.top, 8)
                     if let ch = st.ch, !ch.isEmpty { PsicoChainView(chain: ch) }
@@ -244,13 +244,13 @@ struct PsicoExplanation: View {
                 let o = item.options[c]
                 let d = o.diag ?? PFDiag(lines: [o.why ?? ""], traps: [], vis: nil)
                 VStack(alignment: .leading, spacing: 3) {
-                    Text("Onde \(L[c]) erra").font(.system(size: 13, weight: .heavy)).foregroundColor(PF.bad)
+                    Text("Onde \(L[c]) erra").pfText(.caption, weight: .heavy).foregroundColor(PF.bad)
                     ForEach(d.lines.indices, id: \.self) { i in
-                        Text(d.lines[i]).font(.system(size: 15)).fixedSize(horizontal: false, vertical: true)
+                        Text(d.lines[i]).pfText(.callout).fixedSize(horizontal: false, vertical: true)
                     }
                     if let vis = d.vis, !vis.isEmpty { PsicoChainView(chain: vis) }
                     ForEach((d.traps ?? []).indices, id: \.self) { i in
-                        Text(d.traps![i]).font(.system(size: 15, weight: .semibold)).padding(.top, 4)
+                        Text(d.traps![i]).pfText(.callout, weight: .semibold).padding(.top, 4)
                             .fixedSize(horizontal: false, vertical: true)
                     }
                 }
@@ -261,8 +261,8 @@ struct PsicoExplanation: View {
             }
 
             VStack(alignment: .leading, spacing: 3) {
-                Text("Para qualquer questão deste tipo").font(.system(size: 13, weight: .bold)).foregroundColor(PF.muted)
-                Text(item.method).font(.system(size: 15)).fixedSize(horizontal: false, vertical: true)
+                Text("Para qualquer questão deste tipo").pfText(.caption, weight: .bold).foregroundColor(PF.muted)
+                Text(item.method).pfText(.callout).fixedSize(horizontal: false, vertical: true)
             }
             .padding(.horizontal, 12).padding(.vertical, 10)
             .frame(maxWidth: .infinity, alignment: .leading)
@@ -279,7 +279,7 @@ struct PsicoExplanation: View {
             head = ""
         }
         return (Text(head + " Correta: ") + Text(L[item.answer]).foregroundColor(PF.ok))
-            .font(.system(size: 16, weight: .bold))
+            .pfText(.headline, weight: .bold)
     }
 
     private func recap(_ c: Int) -> some View {
