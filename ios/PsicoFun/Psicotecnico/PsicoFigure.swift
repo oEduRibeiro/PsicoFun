@@ -45,37 +45,44 @@ enum PsicoDraw {
 
     static func points(_ type: String) -> [CGPoint] { shapeCache[type] ?? [] }
 
+    private static func pt(_ x: Double, _ y: Double) -> CGPoint { CGPoint(x: x, y: y) }
+
+    private static func unit(_ deg: Double, _ r: Double = 1, dy: Double = 0) -> CGPoint {
+        let a: Double = deg * Double.pi / 180
+        return CGPoint(x: r * cos(a), y: r * sin(a) + dy)
+    }
+
     private static func makePoints(_ type: String) -> [CGPoint] {
         var pts: [CGPoint] = []
         if let n = sides[type] {
             let off: Double = n % 2 == 1 ? 0 : 180 / Double(n)
-            pts = (0..<n).map { i in
-                let a = (-90 + off + Double(i) * 360 / Double(n)) * .pi / 180
-                return CGPoint(x: cos(a), y: sin(a))
+            let step: Double = 360 / Double(n)
+            for i in 0..<n {
+                let deg: Double = -90 + off + Double(i) * step
+                pts.append(unit(deg))
             }
-        } else {
-            switch type {
-            case "star":
-                pts = (0..<10).map { i in
-                    let a = (-90 + Double(i) * 36) * .pi / 180, r = i % 2 == 1 ? 0.45 : 1
-                    return CGPoint(x: r * cos(a), y: r * sin(a))
-                }
-            case "cross":
-                let t = 0.34
-                pts = [(-t, -1), (t, -1), (t, -t), (1, -t), (1, t), (t, t), (t, 1), (-t, 1), (-t, t), (-1, t), (-1, -t), (-t, -t)]
-                    .map { CGPoint(x: $0.0, y: $0.1) }
-            case "arrow":
-                pts = [(0, -1), (0.75, -0.1), (0.3, -0.1), (0.3, 1), (-0.3, 1), (-0.3, -0.1), (-0.75, -0.1)].map { CGPoint(x: $0.0, y: $0.1) }
-            case "half":
-                pts = (0..<17).map { i in
-                    let a = Double.pi + Double.pi * Double(i) / 16
-                    return CGPoint(x: cos(a), y: sin(a) + 0.45)
-                }
-            case "flag":
-                pts = [(-0.65, 1), (-0.65, -1), (0.85, -0.55), (-0.38, -0.1), (-0.38, 1)].map { CGPoint(x: $0.0, y: $0.1) }
-            default:
-                pts = []
+            return pts
+        }
+        switch type {
+        case "star":
+            for i in 0..<10 {
+                let r: Double = i % 2 == 1 ? 0.45 : 1
+                pts.append(unit(-90 + Double(i) * 36, r))
             }
+        case "cross":
+            let t: Double = 0.34
+            pts = [pt(-t, -1), pt(t, -1), pt(t, -t), pt(1, -t), pt(1, t), pt(t, t),
+                   pt(t, 1), pt(-t, 1), pt(-t, t), pt(-1, t), pt(-1, -t), pt(-t, -t)]
+        case "arrow":
+            pts = [pt(0, -1), pt(0.75, -0.1), pt(0.3, -0.1), pt(0.3, 1), pt(-0.3, 1), pt(-0.3, -0.1), pt(-0.75, -0.1)]
+        case "half":
+            for i in 0..<17 {
+                pts.append(unit(180 + 180 * Double(i) / 16, dy: 0.45))
+            }
+        case "flag":
+            pts = [pt(-0.65, 1), pt(-0.65, -1), pt(0.85, -0.55), pt(-0.38, -0.1), pt(-0.38, 1)]
+        default:
+            break
         }
         return pts
     }
@@ -87,7 +94,7 @@ enum PsicoDraw {
             let rr = r * 0.92
             return Path(ellipseIn: CGRect(x: c.x - rr, y: c.y - rr, width: 2 * rr, height: 2 * rr))
         }
-        let a = rotDeg * .pi / 180, ca = CGFloat(cos(a)), sa = CGFloat(sin(a))
+        let a: Double = rotDeg * Double.pi / 180, ca = CGFloat(cos(a)), sa = CGFloat(sin(a))
         var path = Path()
         let pts = points(type).map { p in CGPoint(x: c.x + r * (p.x * ca - p.y * sa), y: c.y + r * (p.x * sa + p.y * ca)) }
         guard let first = pts.first else { return path }
@@ -138,7 +145,7 @@ enum PsicoDraw {
             shape(&ctx, p.shape, c, r, Double(p.rot * 45), fill: p.fill)
         }
         if p.mark >= 0 {
-            let a = (-90 + Double(p.mark) * 45) * .pi / 180
+            let a: Double = (-90 + Double(p.mark) * 45) * Double.pi / 180
             dot(&ctx, CGPoint(x: 50 + 43 * cos(a), y: 50 + 43 * sin(a)), 5)
         }
     }
