@@ -15,7 +15,8 @@ targets:
     sources:
       - path: PsicoFun
       - path: Shared
-      - path: Web
+      # Motor de geração de questões (lógica pura, roda no JavaScriptCore; a interface é SwiftUI).
+      - path: Engine
         type: folder
         buildPhase: resources
     dependencies:

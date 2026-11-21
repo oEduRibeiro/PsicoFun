@@ -2,7 +2,7 @@ import Combine
 import SwiftUI
 import UIKit
 
-/// Tela raiz: seletor no topo alternando entre o Psicotécnico (WebView) e o Palográfico (SwiftUI).
+/// Tela raiz: seletor no topo alternando entre o Psicotécnico e o Palográfico (ambos em SwiftUI).
 ///
 /// As duas telas ficam vivas o tempo todo (só uma visível), então trocar de modo não
 /// perde o estado de nenhuma delas. Durante uma sessão do Palográfico o seletor e a
@@ -17,7 +17,12 @@ final class RootContainerViewController: UIViewController {
 
     private let engine = PaloSessionEngine()
     private let store = PaloStore()
-    private let webController = WebViewController()
+    private let psicoStore = PsicoStore()
+    private lazy var psicoController: UIHostingController<PsicoRootView> = {
+        let vc = UIHostingController(rootView: PsicoRootView(store: psicoStore))
+        vc.view.backgroundColor = Theme.background
+        return vc
+    }()
     private lazy var paloController: UIHostingController<PalograficoRootView> = {
         let vc = UIHostingController(rootView: PalograficoRootView(engine: engine, store: store))
         vc.view.backgroundColor = .systemGroupedBackground
@@ -75,13 +80,16 @@ final class RootContainerViewController: UIViewController {
             content.bottomAnchor.constraint(equalTo: view.bottomAnchor),
         ])
 
-        embed(webController)
+        embed(psicoController)
         embed(paloController)
 
         let saved = Mode(rawValue: UserDefaults.standard.integer(forKey: Self.modeKey)) ?? .psicotecnico
         mode = saved
         segmented.selectedSegmentIndex = saved.rawValue
         showMode(saved)
+
+        PsicoEngine.shared.warmUp()
+        PsicoMigration.runIfNeeded(store: psicoStore)
 
         engine.$isRunning
             .receive(on: DispatchQueue.main)
@@ -115,7 +123,7 @@ final class RootContainerViewController: UIViewController {
     }
 
     private func showMode(_ mode: Mode) {
-        webController.view.isHidden = mode != .psicotecnico
+        psicoController.view.isHidden = mode != .psicotecnico
         paloController.view.isHidden = mode != .palografico
         view.endEditing(true)
     }
