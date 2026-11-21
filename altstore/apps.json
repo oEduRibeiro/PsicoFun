@@ -26,6 +26,15 @@
       },
       "versions": [
         {
+          "version": "1.0.16",
+          "buildVersion": "16",
+          "date": "2026-11-21T15:31:17Z",
+          "localizedDescription": "Merge pull request #5 from oEduRibeiro/claude/project-thread-jtlw2g",
+          "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.16/PsicoFun.ipa",
+          "size": 953414,
+          "minOSVersion": "15.0"
+        },
+        {
           "version": "1.0.12",
           "buildVersion": "12",
           "date": "2026-11-21T14:50:37Z",
@@ -53,11 +62,11 @@
           "minOSVersion": "15.0"
         }
       ],
-      "version": "1.0.12",
-      "versionDate": "2026-11-21T14:50:37Z",
-      "versionDescription": "Interface em SwiftUI nativo + Liquid Glass, FC do Palográfico e backup dos dois modos (#3, inclui #4)",
-      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.12/PsicoFun.ipa",
-      "size": 935637
+      "version": "1.0.16",
+      "versionDate": "2026-11-21T15:31:17Z",
+      "versionDescription": "Merge pull request #5 from oEduRibeiro/claude/project-thread-jtlw2g",
+      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.16/PsicoFun.ipa",
+      "size": 953414
     }
   ],
   "news": []
