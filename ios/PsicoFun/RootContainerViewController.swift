@@ -98,6 +98,13 @@ final class RootContainerViewController: UIViewController {
         PsicoEngine.shared.warmUp()
         PsicoMigration.runIfNeeded(store: psicoStore)
 
+        #if targetEnvironment(simulator)
+        PFDemo.run(on: self, engine: engine, store: store, psicoStore: psicoStore) { [weak self] in
+            self?.switcherModel.mode = Mode.palografico.rawValue
+            self?.modeSelected(Mode.palografico.rawValue)
+        }
+        #endif
+
         engine.$isRunning
             .receive(on: DispatchQueue.main)
             .sink { [weak self] running in self?.sessionRunning = running }

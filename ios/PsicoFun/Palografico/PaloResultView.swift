@@ -111,7 +111,7 @@ struct PaloResultView: View {
                 ForEach(bands.all, id: \.label) { b in
                     let on = b == current
                     HStack {
-                        Text(b.label).pfText(.callout, weight: on ? .bold : .regular).foregroundColor(PF.ink)
+                        Text(b.label).pfText(.callout, weight: on ? Font.Weight.bold : Font.Weight.regular).foregroundColor(PF.ink)
                         Spacer()
                         Text(b.range).pfText(.footnote).monospacedDigit().foregroundColor(PF.muted)
                     }
