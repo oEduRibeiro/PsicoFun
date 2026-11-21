@@ -101,15 +101,16 @@ struct PaloHistoryView: View {
         let avgMean = ms.map { $0.mean }.reduce(0, +) / n
         let avgOsc = Double(ms.map { $0.oscillation }.reduce(0, +)) / n
         let hrMeans = items.compactMap { $0.heartRate?.mean }
-        var tiles: [PFStatTile] = [PFStatTile(label: "Sessões", value: "\(items.count)")]
+        var tiles: [PFStatTile] = []
         if mode == .teste {
-            tiles.append(PFStatTile(label: "Média total", value: PaloFormat.decimal(avgTotal)))
+            tiles.append(PFStatTile(label: "Total médio", value: PaloFormat.decimal(avgTotal)))
         }
         tiles.append(PFStatTile(label: "Por ciclo", value: PaloFormat.decimal(avgMean)))
         tiles.append(PFStatTile(label: "Oscilação", value: PaloFormat.decimal(avgOsc)))
         return PFCard {
             PFCardHeader(mode == .livre ? "Livre" : "Resumo",
-                         subtitle: mode == .livre ? "Separado do desempenho." : "Médias de todas as sessões de \(mode.title.lowercased()).")
+                         subtitle: (items.count == 1 ? "1 sessão" : "\(items.count) sessões")
+                            + (mode == .livre ? " · separado do desempenho." : " · médias de todas as sessões de \(mode.title.lowercased())."))
             PFStatRow(items: tiles)
             if !hrMeans.isEmpty {
                 PFDivider()

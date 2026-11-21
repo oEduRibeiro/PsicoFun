@@ -86,7 +86,7 @@ struct PaloResultView: View {
     private var cyclesCard: some View {
         PFCard {
             PFCardHeader("Rendimento por ciclo",
-                         subtitle: "Traços verticais em cada minuto. A linha tracejada é a média da sessão.")
+                         subtitle: "Traços verticais em cada minuto. A linha tracejada é a média da sessão (\(PaloFormat.decimal(metrics.mean))).")
             PaloCycleChart(counts: record.counts)
                 .frame(height: 220)
                 .padding(.top, PF.Space.s)
@@ -309,9 +309,9 @@ struct PaloHRCard: View {
         PFFlow(spacing: PF.Space.m) {
             legendItem(AnyView(Circle().fill(PF.pulse).frame(width: 8, height: 8)), "média do ciclo")
             legendItem(AnyView(RoundedRectangle(cornerRadius: 3).fill(PF.pulse.opacity(0.25)).frame(width: 10, height: 14)), "mín–máx")
-            legendItem(AnyView(dash(PF.pulse)), "média da sessão")
-            if previousMean != nil {
-                legendItem(AnyView(dash(PF.muted)), "anteriores")
+            legendItem(AnyView(dash(PF.pulse)), "média da sessão" + (heartRate.mean.map { " \(Int($0.rounded()))" } ?? ""))
+            if let p = previousMean {
+                legendItem(AnyView(dash(PF.muted)), "anteriores \(Int(p.rounded()))")
             }
             if heartRate.isPartial {
                 legendItem(AnyView(Circle().fill(PF.warn).frame(width: 8, height: 8)), "parcial")

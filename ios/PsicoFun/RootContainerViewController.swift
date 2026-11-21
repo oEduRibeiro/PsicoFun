@@ -62,6 +62,8 @@ final class RootContainerViewController: UIViewController {
         bar.backgroundColor = Theme.background
         let switcher = switcherHost.view!
         switcher.translatesAutoresizingMaskIntoConstraints = false
+        switcher.setContentHuggingPriority(.required, for: .vertical)
+        switcher.setContentCompressionResistancePriority(.required, for: .vertical)
         content.translatesAutoresizingMaskIntoConstraints = false
 
         view.addSubview(content)
@@ -194,6 +196,7 @@ struct PFModeSwitcher: View {
             .padding(.bottom, 8)
             .frame(maxWidth: .infinity)
             .background(PF.bg)
+            .fixedSize(horizontal: false, vertical: true)
             .accessibilityElement(children: .contain)
             .accessibilityLabel("Modo do app")
     }

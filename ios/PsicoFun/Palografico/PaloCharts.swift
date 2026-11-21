@@ -66,13 +66,6 @@ struct PaloCycleChart: View {
         RuleMark(y: .value("Média", mean))
             .lineStyle(StrokeStyle(lineWidth: 1.5, dash: [5, 4]))
             .foregroundStyle(PF.acc)
-            .annotation(position: .top, alignment: .trailing, spacing: 2) {
-                Text("média \(PaloFormat.decimal(mean))")
-                    .pfText(.caption, weight: .bold)
-                    .foregroundColor(PF.acc)
-                    .padding(.horizontal, 6).padding(.vertical, 1)
-                    .background(PF.paper.opacity(0.9), in: Capsule())
-            }
             .accessibilityLabel("Média por ciclo")
             .accessibilityValue(PaloFormat.decimal(mean))
     }
@@ -247,11 +240,6 @@ struct PaloHRChart: View {
         RuleMark(y: .value("Média da sessão", m))
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [5, 4]))
             .foregroundStyle(PF.pulse.opacity(0.8))
-            .annotation(position: .top, alignment: .leading, spacing: 2) {
-                Text("média \(Int(m.rounded()))")
-                    .pfText(.caption, weight: .bold)
-                    .foregroundColor(PF.pulse)
-            }
             .accessibilityLabel("Média da sessão")
             .accessibilityValue(PaloFormat.bpm(m))
     }
@@ -261,11 +249,6 @@ struct PaloHRChart: View {
         RuleMark(y: .value("Média das anteriores", m))
             .lineStyle(StrokeStyle(lineWidth: 1, dash: [2, 3]))
             .foregroundStyle(PF.muted)
-            .annotation(position: .bottom, alignment: .trailing, spacing: 2) {
-                Text("anteriores \(Int(m.rounded()))")
-                    .pfText(.caption)
-                    .foregroundColor(PF.muted)
-            }
             .accessibilityLabel("Média das sessões anteriores")
             .accessibilityValue(PaloFormat.bpm(m))
     }
