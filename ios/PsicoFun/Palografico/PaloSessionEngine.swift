@@ -32,6 +32,8 @@ final class PaloSessionEngine: ObservableObject {
         var sound: Bool
         var vibration: Bool
         var notificationFallback: Bool
+        /// Gravar FC do relógio (opcional; a sessão nunca depende disso).
+        var heartRate: Bool = false
     }
 
     @Published private(set) var stage: Stage = .idle
@@ -47,12 +49,15 @@ final class PaloSessionEngine: ObservableObject {
     @Published private(set) var startDate = Date()
     /// Desvios medidos (ms) entre o instante agendado e o disparo de cada bip.
     @Published private(set) var deviationsMs: [Double] = []
+    /// FC resumida por ciclo, calculada ao terminar (nil se o recurso estava desligado).
+    private var pendingHeartRate: PaloHeartRate?
 
     var totalCycles: Int { mode.cycles ?? 0 }
 
     private let audio = PaloAudio()
     private let liveActivity = PaloLiveActivityController()
     private let notifier = PaloNotifier.shared
+    private let heartRate = PaloHeartRateMonitor.shared
 
     // Estado da fila do timer (só acessado em `queue`).
     private let queue = DispatchQueue(label: "psicofun.palografico.timer", qos: .userInteractive)
@@ -83,6 +88,7 @@ final class PaloSessionEngine: ObservableObject {
         currentCycle = 1
         completedCycles = 0
         deviationsMs = []
+        pendingHeartRate = nil
         startDate = start
         stage = .countdown(PaloConstants.countdownSeconds)
         isRunning = true
@@ -91,6 +97,8 @@ final class PaloSessionEngine: ObservableObject {
         audio.activate()
         // A Live Activity precisa ser pedida com o app em primeiro plano: pedimos já na contagem.
         liveActivity.start(state: activityState(cycle: 1, finished: false))
+        // Só grava: nada de FC aparece na tela durante a sessão.
+        if config.heartRate { heartRate.beginRecording() }
         if config.notificationFallback {
             notifier.schedule(mode: mode, start: start, total: mode.cycles)
         }
@@ -118,6 +126,7 @@ final class PaloSessionEngine: ObservableObject {
         guard isRunning, mode == .livre else { return }
         let done: Int
         if case .running = stage { done = max(0, currentCycle - 1) } else { done = 0 }
+        captureHeartRate(cycles: done)
         stopHardware()
         liveActivity.end(finalState: nil)
         completedCycles = done
@@ -129,13 +138,15 @@ final class PaloSessionEngine: ObservableObject {
         let record = PaloRecord(date: startDate, mode: mode, counts: counts,
                                 soundOn: config.sound, vibrationOn: config.vibration,
                                 note: note.trimmingCharacters(in: .whitespacesAndNewlines),
-                                maxBeepDeviationMs: deviationsMs.map { abs($0) }.max())
+                                maxBeepDeviationMs: deviationsMs.map { abs($0) }.max(),
+                                heartRate: pendingHeartRate)
         store.add(record)
         stage = .results(record)
     }
 
     func discardEntry() {
         guard case .entry = stage else { return }
+        pendingHeartRate = nil
         stage = .idle
     }
 
@@ -204,6 +215,7 @@ final class PaloSessionEngine: ObservableObject {
         deviationsMs.append(deviationMs)
         if isLast {
             completedCycles = totalCycles
+            captureHeartRate(cycles: totalCycles)
             stopHardware()
             liveActivity.end(finalState: activityState(cycle: totalCycles, finished: true))
             stage = .entry
@@ -222,6 +234,8 @@ final class PaloSessionEngine: ObservableObject {
             timer = nil
         }
         isRunning = false
+        // Abortar descarta as leituras; ao terminar, captureHeartRate já as pegou.
+        if config.heartRate { heartRate.endRecording() }
         UIApplication.shared.isIdleTimerDisabled = false
         notifier.cancel()
         // Deixa o último bip terminar de tocar antes de soltar a sessão de áudio.
@@ -229,6 +243,17 @@ final class PaloSessionEngine: ObservableObject {
             guard let self = self, !self.isRunning else { return }
             self.audio.deactivate()
         }
+    }
+
+    /// Resume a FC gravada nos ciclos completos. Sem leitura nenhuma, guarda os ciclos vazios
+    /// (o resultado mostra "sem dados"), nunca zeros.
+    private func captureHeartRate(cycles: Int) {
+        guard config.heartRate else { pendingHeartRate = nil; return }
+        let samples = heartRate.endRecording()
+        pendingHeartRate = cycles > 0
+            ? PaloHeartRate.summarize(samples: samples, start: startDate, cycles: cycles,
+                                      deviceName: heartRate.connectedName ?? heartRate.rememberedName)
+            : nil
     }
 
     private func activityState(cycle: Int, finished: Bool) -> PaloActivityAttributes.ContentState {
