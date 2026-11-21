@@ -4,3 +4,4 @@ Payload/
 *.ipa
 DerivedData/
 ios/PsicoFun/Info.plist
+ios/PalograficoWidget/Info.plist

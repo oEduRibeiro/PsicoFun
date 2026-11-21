@@ -2,7 +2,7 @@ name: PsicoFun
 options:
   bundleIdPrefix: com.oeduribeiro
   deploymentTarget:
-    iOS: "15.0"
+    iOS: "16.1"
   createIntermediateGroups: true
 settings:
   base:
@@ -14,9 +14,14 @@ targets:
     platform: iOS
     sources:
       - path: PsicoFun
+      - path: Shared
       - path: Web
         type: folder
         buildPhase: resources
+    dependencies:
+      - target: PalograficoWidget
+        embed: true
+        codeSign: false
     info:
       path: PsicoFun/Info.plist
       properties:
@@ -35,6 +40,10 @@ targets:
         UIStatusBarStyle: UIStatusBarStyleDefault
         UIViewControllerBasedStatusBarAppearance: true
         UIRequiresFullScreen: false
+        # Palográfico: bips/vibração com a tela bloqueada e Live Activity.
+        UIBackgroundModes:
+          - audio
+        NSSupportsLiveActivities: true
         UISupportedInterfaceOrientations:
           - UIInterfaceOrientationPortrait
         UISupportedInterfaceOrientations~ipad:
@@ -50,6 +59,41 @@ targets:
         SWIFT_VERSION: "5.0"
         ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         GENERATE_INFOPLIST_FILE: NO
+        CODE_SIGN_STYLE: Manual
+        CODE_SIGN_IDENTITY: ""
+        CODE_SIGNING_REQUIRED: NO
+        CODE_SIGNING_ALLOWED: NO
+        DEVELOPMENT_TEAM: ""
+
+  # Live Activity / Dynamic Island do modo Palográfico.
+  PalograficoWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - path: PalograficoWidget
+      - path: Shared
+    info:
+      path: PalograficoWidget/Info.plist
+      properties:
+        CFBundleDisplayName: PsicoFun Palográfico
+        CFBundleName: $(PRODUCT_NAME)
+        CFBundleIdentifier: $(PRODUCT_BUNDLE_IDENTIFIER)
+        CFBundleExecutable: $(EXECUTABLE_NAME)
+        CFBundlePackageType: XPC!
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        CFBundleDevelopmentRegion: pt-BR
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_NAME: PalograficoWidget
+        PRODUCT_BUNDLE_IDENTIFIER: com.oeduribeiro.psicofun.PalograficoWidget
+        TARGETED_DEVICE_FAMILY: "1,2"
+        SWIFT_VERSION: "5.0"
+        GENERATE_INFOPLIST_FILE: NO
+        SKIP_INSTALL: YES
+        APPLICATION_EXTENSION_API_ONLY: YES
         CODE_SIGN_STYLE: Manual
         CODE_SIGN_IDENTITY: ""
         CODE_SIGNING_REQUIRED: NO
