@@ -6,7 +6,9 @@
   "iconURL": "https://raw.githubusercontent.com/oEduRibeiro/PsicoFun/main/altstore/icon.png",
   "website": "https://github.com/oEduRibeiro/PsicoFun",
   "tintColor": "#C8102E",
-  "featuredApps": ["com.oeduribeiro.psicofun"],
+  "featuredApps": [
+    "com.oeduribeiro.psicofun"
+  ],
   "apps": [
     {
       "name": "PsicoFun",
@@ -18,8 +20,26 @@
       "tintColor": "#C8102E",
       "category": "education",
       "screenshots": [],
-      "appPermissions": { "entitlements": [], "privacy": {} },
-      "versions": []
+      "appPermissions": {
+        "entitlements": [],
+        "privacy": {}
+      },
+      "versions": [
+        {
+          "version": "1.0.3",
+          "buildVersion": "3",
+          "date": "2026-11-21T14:01:45Z",
+          "localizedDescription": "Merge pull request #1 from oEduRibeiro/claude/project-thread-eev6z2",
+          "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.3/PsicoFun.ipa",
+          "size": 90263,
+          "minOSVersion": "15.0"
+        }
+      ],
+      "version": "1.0.3",
+      "versionDate": "2026-11-21T14:01:45Z",
+      "versionDescription": "Merge pull request #1 from oEduRibeiro/claude/project-thread-eev6z2",
+      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.3/PsicoFun.ipa",
+      "size": 90263
     }
   ],
   "news": []
