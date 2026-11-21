@@ -1,0 +1,26 @@
+{
+  "name": "PsicoFun",
+  "identifier": "com.oeduribeiro.psicofun.source",
+  "subtitle": "Treino de psicotécnico visual",
+  "description": "Fonte oficial do PsicoFun. Cada atualização publicada no GitHub aparece aqui automaticamente.",
+  "iconURL": "https://raw.githubusercontent.com/oEduRibeiro/PsicoFun/main/altstore/icon.png",
+  "website": "https://github.com/oEduRibeiro/PsicoFun",
+  "tintColor": "#C8102E",
+  "featuredApps": ["com.oeduribeiro.psicofun"],
+  "apps": [
+    {
+      "name": "PsicoFun",
+      "bundleIdentifier": "com.oeduribeiro.psicofun",
+      "developerName": "oEduRibeiro",
+      "subtitle": "Treino de psicotécnico visual",
+      "localizedDescription": "Sequências, matrizes, analogias, rotação e figura intrusa. Cada questão é gerada na hora a partir de regras e verificada por um solucionador: só existe uma resposta certa. Modos Treino livre, Rampa progressiva, Simulado, Adaptativo e Ponto fraco, com desempenho por tipo e por regra.",
+      "iconURL": "https://raw.githubusercontent.com/oEduRibeiro/PsicoFun/main/altstore/icon.png",
+      "tintColor": "#C8102E",
+      "category": "education",
+      "screenshots": [],
+      "appPermissions": { "entitlements": [], "privacy": {} },
+      "versions": []
+    }
+  ],
+  "news": []
+}

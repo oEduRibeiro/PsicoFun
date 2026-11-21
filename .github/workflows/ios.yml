@@ -1,0 +1,105 @@
+name: iOS (.ipa)
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'ios/**'
+      - 'scripts/**'
+      - '.github/workflows/ios.yml'
+  pull_request:
+    paths:
+      - 'ios/**'
+      - 'scripts/**'
+      - '.github/workflows/ios.yml'
+  workflow_dispatch:
+    inputs:
+      notes:
+        description: 'Notas da versão (opcional)'
+        required: false
+
+permissions:
+  contents: write
+
+concurrency:
+  group: ios-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Versão
+        id: v
+        run: |
+          BASE=$(tr -d '[:space:]' < ios/VERSION)
+          BUILD=${{ github.run_number }}
+          echo "version=$BASE.$BUILD" >> "$GITHUB_OUTPUT"
+          echo "build=$BUILD" >> "$GITHUB_OUTPUT"
+
+      - name: Gerar projeto Xcode
+        run: |
+          brew install xcodegen
+          cd ios && xcodegen generate
+
+      - name: Compilar (sem assinatura)
+        run: |
+          cd ios
+          xcodebuild \
+            -project PsicoFun.xcodeproj \
+            -target PsicoFun \
+            -configuration Release \
+            -sdk iphoneos \
+            SYMROOT="$PWD/build" \
+            MARKETING_VERSION=${{ steps.v.outputs.version }} \
+            CURRENT_PROJECT_VERSION=${{ steps.v.outputs.build }} \
+            CODE_SIGNING_ALLOWED=NO CODE_SIGNING_REQUIRED=NO CODE_SIGN_IDENTITY="" \
+            build | tee build.log | grep -E '^(\*\*|error|warning: .*Swift)' || true
+          test -d build/Release-iphoneos/PsicoFun.app || { tail -80 build.log; exit 1; }
+
+      - name: Empacotar .ipa
+        run: |
+          cd ios
+          rm -rf Payload && mkdir Payload
+          cp -R build/Release-iphoneos/PsicoFun.app Payload/
+          zip -qry ../PsicoFun.ipa Payload
+          ls -lh ../PsicoFun.ipa
+          /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Payload/PsicoFun.app/Info.plist
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: PsicoFun-${{ steps.v.outputs.version }}
+          path: PsicoFun.ipa
+
+      - name: Publicar no GitHub Releases
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          NOTES: ${{ github.event.inputs.notes || github.event.head_commit.message }}
+        run: |
+          TAG=v${{ steps.v.outputs.version }}
+          printf '%s\n' "${NOTES:-Versão ${{ steps.v.outputs.version }}}" > notes.txt
+          gh release create "$TAG" PsicoFun.ipa \
+            --title "PsicoFun ${{ steps.v.outputs.version }}" \
+            --notes-file notes.txt \
+            --target "$GITHUB_SHA" \
+            --latest
+
+      - name: Atualizar a fonte (altstore/apps.json)
+        if: github.event_name != 'pull_request'
+        env:
+          NOTES: ${{ github.event.inputs.notes || github.event.head_commit.message }}
+        run: |
+          VERSION=${{ steps.v.outputs.version }}
+          URL="https://github.com/${{ github.repository }}/releases/download/v$VERSION/PsicoFun.ipa"
+          git fetch origin main
+          git checkout -B main origin/main
+          python3 scripts/update_source.py --version "$VERSION" --build "${{ steps.v.outputs.build }}" \
+            --ipa PsicoFun.ipa --url "$URL" --notes "$(printf '%s' "$NOTES" | head -n 1)"
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add altstore/apps.json
+          git commit -m "Fonte: PsicoFun $VERSION [skip ci]"
+          for i in 1 2 3; do git push origin main && break; git pull --rebase origin main; done
