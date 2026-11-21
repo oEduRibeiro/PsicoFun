@@ -26,6 +26,15 @@
       },
       "versions": [
         {
+          "version": "1.0.4",
+          "buildVersion": "4",
+          "date": "2026-11-21T14:03:24Z",
+          "localizedDescription": "Merge pull request #2 from oEduRibeiro/claude/project-thread-yy7gwg",
+          "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.4/PsicoFun.ipa",
+          "size": 321749,
+          "minOSVersion": "15.0"
+        },
+        {
           "version": "1.0.3",
           "buildVersion": "3",
           "date": "2026-11-21T14:01:45Z",
@@ -35,11 +44,11 @@
           "minOSVersion": "15.0"
         }
       ],
-      "version": "1.0.3",
-      "versionDate": "2026-11-21T14:01:45Z",
-      "versionDescription": "Merge pull request #1 from oEduRibeiro/claude/project-thread-eev6z2",
-      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.3/PsicoFun.ipa",
-      "size": 90263
+      "version": "1.0.4",
+      "versionDate": "2026-11-21T14:03:24Z",
+      "versionDescription": "Merge pull request #2 from oEduRibeiro/claude/project-thread-yy7gwg",
+      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.4/PsicoFun.ipa",
+      "size": 321749
     }
   ],
   "news": []
