@@ -126,8 +126,8 @@ struct PsicoQuizView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .foregroundColor(PF.muted)
                     .padding(.horizontal, 10).padding(.vertical, 3)
-                    .background(PF.paper, in: Capsule())
-                    .overlay(Capsule().stroke(PF.line, lineWidth: 1))
+                    .pfGlass(Capsule(), fallback: PF.paper)
+                    .overlay(Capsule().stroke(PFGlass.available ? Color.clear : PF.line, lineWidth: 1))
                     .lineLimit(1)
                 Spacer(minLength: 4)
                 if st.timer || sim || st.qTime > 0 {
@@ -139,6 +139,8 @@ struct PsicoQuizView: View {
                     Image(systemName: "xmark")
                         .font(.system(size: 16, weight: .semibold))
                         .foregroundColor(PF.muted)
+                        .frame(width: 40, height: 40)
+                        .pfGlass(Circle(), interactive: true, fallback: .clear)
                         .frame(width: 44, height: 44)
                         .contentShape(Rectangle())
                 }
@@ -229,8 +231,9 @@ struct PsicoQuizView: View {
         .padding(.top, 10)
         .padding(.bottom, 10)
         .frame(maxWidth: .infinity)
-        .background(PF.bg.ignoresSafeArea(edges: .bottom))
-        .overlay(alignment: .top) { Rectangle().fill(PF.line).frame(height: 0.5) }
+        // iOS 26: botões de vidro flutuando sobre o conteúdo; antes: barra sólida com divisória.
+        .background(PFGlass.available ? Color.clear : PF.bg, ignoresSafeAreaEdges: .bottom)
+        .overlay(alignment: .top) { Rectangle().fill(PFGlass.available ? Color.clear : PF.line).frame(height: 0.5) }
     }
 
     private func palette(_ s: PsicoSession) -> some View {
@@ -402,7 +405,7 @@ struct PsicoExplanationSheet: View {
                 Button(action: onClose) {
                     Image(systemName: "xmark").font(.system(size: 15, weight: .semibold))
                         .frame(width: 40, height: 40)
-                        .background(PF.soft, in: Circle())
+                        .pfGlass(Circle(), interactive: true, fallback: PF.soft)
                 }
                 .foregroundColor(PF.ink)
                 .accessibilityLabel("Fechar explicação")
@@ -420,7 +423,7 @@ struct PsicoExplanationSheet: View {
                     .padding(16)
             }
         }
-        .background(PF.paper.ignoresSafeArea())
+        .pfSolidBackgroundBeforeGlass(PF.paper)
         .presentationDetents([.medium, .large])
         .presentationDragIndicator(.visible)
     }

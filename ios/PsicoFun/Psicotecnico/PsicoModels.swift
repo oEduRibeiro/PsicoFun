@@ -148,12 +148,15 @@ struct PsicoBackup: Codable {
     var palografico: PaloBackup?
 }
 
-/// Parte do backup com os dados do Palográfico.
+/// Parte do backup com os dados do Palográfico. A FC de cada sessão vai junto no
+/// próprio registro (campo opcional heartRate), então backups sem FC continuam válidos.
 struct PaloBackup: Codable {
     var records: [PaloRecord]
     var sound: Bool?
     var vibration: Bool?
     var notificationFallback: Bool?
+    /// Gravar FC do relógio. O relógio pareado não vai no backup (é do aparelho).
+    var heartRate: Bool?
     var mode: String?
     var bandMedia: Int?
     var bandAlta: Int?
@@ -165,6 +168,7 @@ struct PaloBackup: Codable {
                           sound: d.bool(forKey: PaloKeys.sound),
                           vibration: d.bool(forKey: PaloKeys.vibration),
                           notificationFallback: d.bool(forKey: PaloKeys.notificationFallback),
+                          heartRate: d.bool(forKey: PaloKeys.heartRate),
                           mode: d.string(forKey: PaloKeys.mode),
                           bandMedia: d.integer(forKey: PaloKeys.bandMedia),
                           bandAlta: d.integer(forKey: PaloKeys.bandAlta),
@@ -177,6 +181,7 @@ struct PaloBackup: Codable {
         if let v = sound { d.set(v, forKey: PaloKeys.sound) }
         if let v = vibration { d.set(v, forKey: PaloKeys.vibration) }
         if let v = notificationFallback { d.set(v, forKey: PaloKeys.notificationFallback) }
+        if let v = heartRate { d.set(v, forKey: PaloKeys.heartRate) }
         if let v = mode, PaloMode(rawValue: v) != nil { d.set(v, forKey: PaloKeys.mode) }
         if let m = bandMedia, let a = bandAlta, let s = bandSuperior,
            PaloBands(mediaMin: m, altaMin: a, superiorMin: s).isValid {

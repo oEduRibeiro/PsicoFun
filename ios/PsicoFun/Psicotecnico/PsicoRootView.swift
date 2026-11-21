@@ -84,9 +84,9 @@ struct PsicoRootView: View {
             if let t = store.toast {
                 Text(t)
                     .font(.system(size: 14, weight: .semibold))
-                    .foregroundColor(PF.paper)
                     .padding(.horizontal, 16).padding(.vertical, 10)
-                    .background(PF.ink, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .foregroundColor(PFGlass.available ? PF.ink : PF.paper)
+                    .pfGlass(Capsule(), fallback: PF.ink)
                     .padding(.horizontal, 16)
                     .padding(.bottom, nav.quizShown ? 100 : 64)
                     .transition(.move(edge: .bottom).combined(with: .opacity))

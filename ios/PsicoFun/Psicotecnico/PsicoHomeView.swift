@@ -215,6 +215,7 @@ private struct InvertedGhostStyle: ButtonStyle {
             .padding(.horizontal, 16)
             .frame(minHeight: 46)
             .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(PF.paper.opacity(0.35), lineWidth: 1))
+            .pfGlass(RoundedRectangle(cornerRadius: PFGlass.available ? 22 : 12, style: .continuous), interactive: true, fallback: .clear)
             .opacity(configuration.isPressed ? 0.7 : 1)
     }
 }

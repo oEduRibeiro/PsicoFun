@@ -39,6 +39,14 @@ jobs:
           echo "version=$BASE.$BUILD" >> "$GITHUB_OUTPUT"
           echo "build=$BUILD" >> "$GITHUB_OUTPUT"
 
+      # SDK do iOS 26 (Xcode 26) para o visual Liquid Glass; o app continua rodando a partir do iOS 16.1.
+      - name: Selecionar Xcode
+        run: |
+          X=$(ls -d /Applications/Xcode_26*.app 2>/dev/null | sort -V | tail -1)
+          if [ -n "$X" ]; then sudo xcode-select -s "$X/Contents/Developer"; else echo "Xcode 26 não encontrado; usando o padrão"; fi
+          xcodebuild -version
+          xcrun --sdk iphoneos --show-sdk-version
+
       - name: Gerar projeto Xcode
         run: |
           brew install xcodegen

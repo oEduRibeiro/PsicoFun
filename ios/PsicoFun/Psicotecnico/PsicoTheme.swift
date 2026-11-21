@@ -62,14 +62,17 @@ struct PFButtonStyle: ButtonStyle {
         case .ghost: fg = PF.ink; bg = .clear; border = PF.line
         case .danger: fg = PF.bad; bg = .clear; border = PF.bad
         }
+        let glass = PFGlass.available
+        let shape = RoundedRectangle(cornerRadius: glass ? 22 : 12, style: .continuous)
+        let tint: Color? = kind == .primary ? PF.ink : kind == .accent ? PF.acc : nil
         return configuration.label
             .font(.system(size: small ? 14 : (wide ? 17 : 16), weight: .semibold))
             .foregroundColor(fg)
             .padding(.horizontal, small ? 12 : 16)
             .frame(minHeight: small ? 36 : (wide ? 52 : 46))
             .frame(maxWidth: wide ? .infinity : nil)
-            .background(bg, in: RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(RoundedRectangle(cornerRadius: 12, style: .continuous).stroke(border, lineWidth: 1))
+            .pfGlass(shape, tint: tint, interactive: true, fallback: bg)
+            .overlay(shape.stroke(glass && kind != .danger ? Color.clear : border, lineWidth: 1))
             .opacity(isEnabled ? (configuration.isPressed ? 0.85 : 1) : 0.4)
             .scaleEffect(configuration.isPressed ? 0.97 : 1)
             .animation(.easeOut(duration: 0.1), value: configuration.isPressed)
@@ -99,8 +102,8 @@ struct PFChip: View {
                 .foregroundColor(on ? PF.paper : PF.ink)
                 .padding(.horizontal, 14)
                 .frame(minHeight: 40)
-                .background(on ? PF.ink : PF.paper, in: Capsule())
-                .overlay(Capsule().stroke(on ? PF.ink : PF.line, lineWidth: 1.5))
+                .pfGlass(Capsule(), tint: on ? PF.ink : nil, interactive: true, fallback: on ? PF.ink : PF.paper)
+                .overlay(Capsule().stroke(PFGlass.available ? Color.clear : (on ? PF.ink : PF.line), lineWidth: 1.5))
         }
         .buttonStyle(PFPressStyle())
     }
@@ -191,4 +194,56 @@ struct PFFlow: Layout {
 struct PFEye: View {
     let open: Bool
     var body: some View { Image(systemName: open ? "eye" : "eye.slash") }
+}
+
+// MARK: - Liquid Glass (iOS 26) com recaída para o visual atual
+
+/// Liquid Glass só existe a partir do iOS 26 (e só compila com o SDK do Xcode 26).
+/// Em versões anteriores do iOS, ou com um Xcode mais antigo, usa o preenchimento sólido de antes.
+enum PFGlass {
+    static var available: Bool {
+        #if compiler(>=6.2)
+        if #available(iOS 26.0, *) { return true }
+        #endif
+        return false
+    }
+
+    #if compiler(>=6.2)
+    @available(iOS 26.0, *)
+    static func style(tint: Color?, interactive: Bool) -> Glass {
+        var g = Glass.regular
+        if let t = tint { g = g.tint(t) }
+        if interactive { g = g.interactive() }
+        return g
+    }
+    #endif
+}
+
+#if compiler(>=6.2)
+extension View {
+    /// Fundo de vidro (iOS 26) ou cor sólida (antes).
+    @ViewBuilder
+    func pfGlass<S: Shape>(_ shape: S, tint: Color? = nil, interactive: Bool = false, fallback: Color) -> some View {
+        if #available(iOS 26.0, *) {
+            self.glassEffect(PFGlass.style(tint: tint, interactive: interactive), in: shape)
+        } else {
+            self.background(fallback, in: shape)
+        }
+    }
+}
+#else
+extension View {
+    /// Fundo sólido (SDK sem Liquid Glass).
+    func pfGlass<S: Shape>(_ shape: S, tint: Color? = nil, interactive: Bool = false, fallback: Color) -> some View {
+        self.background(fallback, in: shape)
+    }
+}
+#endif
+
+extension View {
+    /// Fundo sólido que some no iOS 26 (deixa o vidro do sistema aparecer, ex.: folhas).
+    @ViewBuilder
+    func pfSolidBackgroundBeforeGlass(_ color: Color) -> some View {
+        if PFGlass.available { self } else { self.background(color.ignoresSafeArea()) }
+    }
 }
