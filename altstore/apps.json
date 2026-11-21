@@ -26,6 +26,15 @@
       },
       "versions": [
         {
+          "version": "1.0.21",
+          "buildVersion": "21",
+          "date": "2026-11-21T16:10:09Z",
+          "localizedDescription": "Design system único, Palográfico redesenhado e novo gráfico de FC (#6)",
+          "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.21/PsicoFun.ipa",
+          "size": 1302711,
+          "minOSVersion": "15.0"
+        },
+        {
           "version": "1.0.16",
           "buildVersion": "16",
           "date": "2026-11-21T15:31:17Z",
@@ -62,11 +71,11 @@
           "minOSVersion": "15.0"
         }
       ],
-      "version": "1.0.16",
-      "versionDate": "2026-11-21T15:31:17Z",
-      "versionDescription": "Merge pull request #5 from oEduRibeiro/claude/project-thread-jtlw2g",
-      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.16/PsicoFun.ipa",
-      "size": 953414
+      "version": "1.0.21",
+      "versionDate": "2026-11-21T16:10:09Z",
+      "versionDescription": "Design system único, Palográfico redesenhado e novo gráfico de FC (#6)",
+      "downloadURL": "https://github.com/oEduRibeiro/PsicoFun/releases/download/v1.0.21/PsicoFun.ipa",
+      "size": 1302711
     }
   ],
   "news": []
