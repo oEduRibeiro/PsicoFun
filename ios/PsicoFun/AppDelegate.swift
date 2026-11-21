@@ -8,7 +8,7 @@ final class AppDelegate: UIResponder, UIApplicationDelegate {
                      didFinishLaunchingWithOptions launchOptions: [UIApplication.LaunchOptionsKey: Any]?) -> Bool {
         let window = UIWindow(frame: UIScreen.main.bounds)
         window.backgroundColor = Theme.background
-        window.rootViewController = WebViewController()
+        window.rootViewController = RootContainerViewController()
         window.makeKeyAndVisible()
         self.window = window
         return true

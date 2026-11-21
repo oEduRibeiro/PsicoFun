@@ -64,6 +64,7 @@ jobs:
           cd ios
           rm -rf Payload && mkdir Payload
           cp -R build/Release-iphoneos/PsicoFun.app Payload/
+          test -d Payload/PsicoFun.app/PlugIns/PalograficoWidget.appex || { echo "Faltou a extensão da Live Activity"; exit 1; }
           zip -qry ../PsicoFun.ipa Payload
           ls -lh ../PsicoFun.ipa
           /usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' Payload/PsicoFun.app/Info.plist
